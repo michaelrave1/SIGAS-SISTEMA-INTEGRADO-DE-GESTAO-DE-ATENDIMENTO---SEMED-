@@ -23,17 +23,17 @@ O domínio institucional é o único aceito pelo código, mesmo se a lista de co
 ## Configuração remota observada em 28/09/2026
 
 - Google Provider: habilitado.
-- Email Provider: habilitado no provedor; sua desativação deve acompanhar a publicação após validar o retorno Google.
-- Site URL: `https://os-semed-detic-michael.vercel.app/` (mantida).
-- A lista de retornos contém o endereço antigo e padrões relacionados; o callback exato do domínio atual estava ausente.
-- A inclusão de `https://os-semed.vercel.app/auth/callback` foi bloqueada pela revisão automática por exigir aprovação explícita para modificar a configuração de autenticação. Não houve confirmação de salvamento.
+- Email Provider: desabilitado após validar o login Google completo com a conta institucional.
+- Site URL observada ao concluir: `https://sigas-detic-michael.vercel.app/` (mantida).
+- O callback exato `https://os-semed.vercel.app/auth/callback` foi adicionado à lista Redirect URLs; os demais retornos foram preservados.
+- A inclusão foi concluída após aprovação explícita do responsável. O salvamento foi confirmado no painel.
 
 ## Credenciais e limites da validação
 
 Client ID e Client Secret do Google são configurados somente no Supabase Google Provider. Não adicionar Client Secret, service-role ou credenciais administrativas a `NEXT_PUBLIC_*`, componentes de cliente ou repositório. O app usa somente URL Supabase e chave publishable, além da sessão do usuário.
 
-Conforme a instrução final, o formulário de e-mail/senha, a função `login` com `signInWithPassword` e sua exportação foram removidos do aplicativo. A tela oferece apenas Google Workspace. Contas, vínculos e dados existentes não foram excluídos. O provedor Email remoto ainda precisa ser desativado de forma coordenada com a publicação; apenas remover o formulário não desativa a API de senha do Supabase.
+Conforme a instrução final, o formulário de e-mail/senha, a função `login` com `signInWithPassword` e sua exportação foram removidos do aplicativo. A tela oferece apenas Google Workspace. Contas, vínculos e dados existentes não foram excluídos. O provedor Email também foi desativado no Supabase; não foi apenas removido o formulário.
 
-As alterações de código são locais até a publicação. A autenticação completa com uma conta Google não foi concluída nesta revisão. A política do callback não substitui a configuração de público interno no Google Workspace nem uma eventual política de cadastro no Supabase Auth para impedir a criação de usuários externos diretamente no provedor.
+A versão com Google exclusivo já estava publicada ao concluir a configuração. O teste completo com a conta institucional passou pelo seletor Google, retornou pelo callback e abriu /painel, sem erros no console. O endereço enviado ao Google confirmou redirect_to=https://os-semed.vercel.app/auth/callback, redirect_uri=https://ouixjkqcuqpfmhmmsdxg.supabase.co/auth/v1/callback e hd=edu.uberabadigital.com.br. A política do callback não substitui a configuração de público interno no Google Workspace nem uma eventual política de cadastro no Supabase Auth para impedir a criação de usuários externos diretamente no provedor.
 
 Referência: https://supabase.com/docs/guides/auth/social-login/auth-google
