@@ -1,0 +1,423 @@
+"use server";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { z } from "zod";
+import { fieldLimits } from "@/lib/application-config";
+import { session } from "@/lib/session";
+import {
+  advanceOrderSchema,
+  completeOrderSchema,
+  justifyOrderSchema,
+  orderAssignmentSchema,
+  orderForwardSchema,
+  orderReassignmentSchema,
+  orderReconciliationSchema,
+  orderSchema,
+  orderServiceEntrySchema,
+  orderVersionedSchema,
+  orderWaitingSchema,
+  priorities,
+  roleNames,
+} from "@/lib/domain";
+import {
+  actionFailed,
+  formText,
+  orderActionFailed,
+  requireActionPermission,
+  requireAdministrator,
+} from "./shared";
+import {
+  legacyStatusPermission,
+  orderActionPermissions,
+} from "@/lib/authorization-policy";
+
+function refreshOrder(id: string) {
+  revalidatePath(`/ordens/${id}`);
+  revalidatePath("/ordens");
+  revalidatePath("/painel");
+}
+
+function orderPath(form: FormData) {
+  const id = z.uuid().safeParse(form.get("id"));
+  return id.success ? `/ordens/${id.data}` : "/ordens";
+}
+
+function invalidOrderAction(form: FormData, operation: string) {
+  return actionFailed(orderPath(form), "validation", operation);
+}
+
+export async function createOrder(form: FormData) {
+  const { db } = await session();
+  await requireActionPermission(
+    db,
+    orderActionPermissions.CREATE,
+    "/ordens/nova",
+    "CREATE",
+  );
+  const input = orderSchema.safeParse(Object.fromEntries(form));
+  if (!input.success) return actionFailed("/ordens/nova");
+  const {
+    title,
+    unit_id,
+    category_id,
+    priority,
+    driver,
+    vehicle,
+    route,
+    ...details
+  } = input.data;
+  if (details.occurred_at && !Number.isFinite(Date.parse(details.occurred_at)))
+    return actionFailed("/ordens/nova");
+  const { data: category, error: categoryError } = await db
+    .from("os_catalogs")
+    .select("id")
+    .eq("id", category_id)
+    .eq("kind", "logistics")
+    .eq("active", true)
+    .single();
+  if (categoryError || !category) return actionFailed("/ordens/nova");
+  const { data, error } = await db.rpc("os_open_order", {
+    order_title: title,
+    target_unit: unit_id,
+    target_category: category_id,
+    order_priority: priority,
+    order_details: details,
+    target_driver: driver || null,
+    target_vehicle: vehicle || null,
+    target_route: route || null,
+  });
+  if (error || !data) return actionFailed("/ordens/nova");
+  revalidatePath("/painel");
+  redirect(`/ordens/${data}`);
+}
+
+export async function reconcileOrder(form: FormData) {
+  const input = orderReconciliationSchema.safeParse(Object.fromEntries(form));
+  if (!input.success) return invalidOrderAction(form, "RECONCILE");
+  const { db } = await session();
+  await requireActionPermission(db, orderActionPermissions.RECONCILE, `/ordens/${input.data.id}`, "RECONCILE");
+  const { id, version, unit_id, opened_by, category_id } = input.data;
+  const { error } = await db.rpc("os_reconcile_order", {
+    target: id,
+    expected_version: version,
+    target_unit: unit_id,
+    target_opened_by: opened_by,
+    target_category: category_id,
+  });
+  if (error)
+    return orderActionFailed(`/ordens/${id}`, error, "RECONCILE");
+  refreshOrder(id);
+}
+
+export async function startTriage(form: FormData) {
+  const input = orderVersionedSchema.safeParse(Object.fromEntries(form));
+  if (!input.success) return invalidOrderAction(form, "TRIAGE");
+  const { db } = await session();
+  await requireActionPermission(db, orderActionPermissions.TRIAGE, `/ordens/${input.data.id}`, "TRIAGE");
+  const { id, version } = input.data;
+  const { error } = await db.rpc("os_start_triage", {
+    target: id,
+    expected_version: version,
+  });
+  if (error) return orderActionFailed(`/ordens/${id}`, error, "TRIAGE");
+  refreshOrder(id);
+}
+
+export async function forwardOrder(form: FormData) {
+  const input = orderForwardSchema.safeParse(Object.fromEntries(form));
+  if (!input.success) return invalidOrderAction(form, "FORWARD");
+  const { db } = await session();
+  await requireActionPermission(db, orderActionPermissions.FORWARD, `/ordens/${input.data.id}`, "FORWARD");
+  const { id, version, destination_unit_id } = input.data;
+  const { error } = await db.rpc("os_forward_order", {
+    target: id,
+    expected_version: version,
+    destination_unit: destination_unit_id,
+  });
+  if (error) return orderActionFailed(`/ordens/${id}`, error, "FORWARD");
+  refreshOrder(id);
+}
+
+export async function assignOrder(form: FormData) {
+  const input = orderAssignmentSchema.safeParse(Object.fromEntries(form));
+  if (!input.success) return invalidOrderAction(form, "ASSIGN");
+  const { db } = await session();
+  await requireActionPermission(db, orderActionPermissions.ASSIGN, `/ordens/${input.data.id}`, "ASSIGN");
+  const { id, version, responsible_membership_id } = input.data;
+  const { error } = await db.rpc("os_assign_order", {
+    target: id,
+    expected_version: version,
+    responsible_membership: responsible_membership_id,
+  });
+  if (error) return orderActionFailed(`/ordens/${id}`, error, "ASSIGN");
+  refreshOrder(id);
+}
+
+export async function reassignOrder(form: FormData) {
+  const input = orderReassignmentSchema.safeParse(Object.fromEntries(form));
+  if (!input.success) return invalidOrderAction(form, "REASSIGN");
+  const { db } = await session();
+  await requireActionPermission(db, orderActionPermissions.REASSIGN, `/ordens/${input.data.id}`, "REASSIGN");
+  const { id, version, responsible_membership_id, justification } = input.data;
+  const { error } = await db.rpc("os_reassign_order", {
+    target: id,
+    expected_version: version,
+    responsible_membership: responsible_membership_id,
+    justification,
+  });
+  if (error) return orderActionFailed(`/ordens/${id}`, error, "REASSIGN");
+  refreshOrder(id);
+}
+
+export async function startService(form: FormData) {
+  const input = orderVersionedSchema.safeParse(Object.fromEntries(form));
+  if (!input.success) return invalidOrderAction(form, "START_SERVICE");
+  const { db } = await session();
+  await requireActionPermission(db, orderActionPermissions.START_SERVICE, `/ordens/${input.data.id}`, "START_SERVICE");
+  const { id, version } = input.data;
+  const { error } = await db.rpc("os_start_service", {
+    target: id,
+    expected_version: version,
+  });
+  if (error)
+    return orderActionFailed(`/ordens/${id}`, error, "START_SERVICE");
+  refreshOrder(id);
+}
+
+export async function addServiceEntry(form: FormData) {
+  const input = orderServiceEntrySchema.safeParse(Object.fromEntries(form));
+  if (!input.success) return invalidOrderAction(form, "ADD_SERVICE_ENTRY");
+  const { db } = await session();
+  await requireActionPermission(db, orderActionPermissions.ADD_SERVICE_ENTRY, `/ordens/${input.data.id}`, "ADD_SERVICE_ENTRY");
+  const { id, version, entry_type, description, serviced_at } = input.data;
+  const { error } = await db.rpc("os_add_service_entry", {
+    target: id,
+    expected_version: version,
+    entry_kind: entry_type,
+    entry_description: description,
+    serviced_on: serviced_at,
+  });
+  if (error)
+    return orderActionFailed(`/ordens/${id}`, error, "ADD_SERVICE_ENTRY");
+  refreshOrder(id);
+}
+
+export async function waitForInformation(form: FormData) {
+  const input = orderWaitingSchema.safeParse(Object.fromEntries(form));
+  if (!input.success) return invalidOrderAction(form, "WAIT_INFORMATION");
+  const { db } = await session();
+  await requireActionPermission(
+    db,
+    orderActionPermissions.WAIT_INFORMATION,
+    `/ordens/${input.data.id}`,
+    "WAIT_INFORMATION",
+  );
+  const { id, version, waitingReason, justification } = input.data;
+  const { error } = await db.rpc("os_wait_for_information", {
+    target: id,
+    expected_version: version,
+    wait_reason: waitingReason,
+    wait_details: justification,
+  });
+  if (error)
+    return orderActionFailed(`/ordens/${id}`, error, "WAIT_INFORMATION");
+  refreshOrder(id);
+}
+
+export async function resumeService(form: FormData) {
+  const input = orderVersionedSchema.safeParse(Object.fromEntries(form));
+  if (!input.success) return invalidOrderAction(form, "RESUME");
+  const { db } = await session();
+  await requireActionPermission(db, orderActionPermissions.RESUME, `/ordens/${input.data.id}`, "RESUME");
+  const { id, version } = input.data;
+  const { error } = await db.rpc("os_resume_service", {
+    target: id,
+    expected_version: version,
+  });
+  if (error) return orderActionFailed(`/ordens/${id}`, error, "RESUME");
+  refreshOrder(id);
+}
+
+export async function changeStatus(form: FormData) {
+  const { db } = await session();
+  const input = advanceOrderSchema.safeParse(Object.fromEntries(form));
+  if (!input.success) return actionFailed("/ordens");
+  const { id, status, reason } = input.data;
+  const permission = legacyStatusPermission(status);
+  await requireActionPermission(db, permission, `/ordens/${id}`, "CHANGE_STATUS_LEGACY");
+  const { error } = await db.rpc("os_change_status", {
+    target: id,
+    next_status: status,
+    reason,
+  });
+  if (error) return actionFailed(`/ordens/${id}`);
+  refreshOrder(id);
+}
+
+export async function completeOrder(form: FormData) {
+  const input = completeOrderSchema.safeParse(Object.fromEntries(form));
+  if (!input.success) return invalidOrderAction(form, "COMPLETE");
+  const { db } = await session();
+  await requireActionPermission(db, orderActionPermissions.COMPLETE, `/ordens/${input.data.id}`, "COMPLETE");
+  const { id, version, solution } = input.data;
+  const { error } = await db.rpc("os_complete_order", {
+    target: id,
+    expected_version: version,
+    solution,
+  });
+  if (error) return orderActionFailed(`/ordens/${id}`, error, "COMPLETE");
+  refreshOrder(id);
+}
+
+export async function cancelOrder(form: FormData) {
+  const input = justifyOrderSchema.safeParse(Object.fromEntries(form));
+  if (!input.success) return invalidOrderAction(form, "CANCEL");
+  const { db } = await session();
+  await requireActionPermission(db, orderActionPermissions.CANCEL, `/ordens/${input.data.id}`, "CANCEL");
+  const { id, version, justification } = input.data;
+  const { error } = await db.rpc("os_cancel_order", {
+    target: id,
+    expected_version: version,
+    justification,
+  });
+  if (error) return orderActionFailed(`/ordens/${id}`, error, "CANCEL");
+  refreshOrder(id);
+}
+
+export async function reopenOrder(form: FormData) {
+  const input = justifyOrderSchema.safeParse(Object.fromEntries(form));
+  if (!input.success) return invalidOrderAction(form, "REOPEN");
+  const { db } = await session();
+  await requireActionPermission(db, orderActionPermissions.REOPEN, `/ordens/${input.data.id}`, "REOPEN");
+  const { id, version, justification } = input.data;
+  const { error } = await db.rpc("os_reopen_order", {
+    target: id,
+    expected_version: version,
+    justification,
+  });
+  if (error) return orderActionFailed(`/ordens/${id}`, error, "REOPEN");
+  refreshOrder(id);
+}
+
+export async function editOrderDetails(form: FormData) {
+  const { db, admin } = await session();
+  requireAdministrator(admin);
+  await requireActionPermission(db, orderActionPermissions.EDIT, orderPath(form), "EDIT_LEGACY");
+  const id = z.uuid().parse(formText(form, "id"));
+  const input = z
+    .object({
+      title: z.string().trim().min(3).max(fieldLimits.title),
+      observation: z.string().trim().max(fieldLimits.observation),
+      has_material: z.enum(["Não informado", "Sim", "Não"]),
+      police_report: z.string().trim().max(fieldLimits.policeReport),
+      priority: z.enum(priorities),
+    })
+    .safeParse(Object.fromEntries(form));
+  if (!input.success) return actionFailed(`/ordens/${id}`);
+  const { data: previous, error: readError } = await db
+    .from("os_orders")
+    .select("details")
+    .eq("id", id)
+    .single();
+  if (readError || !previous) return actionFailed(`/ordens/${id}`);
+  const { title, priority, ...details } = input.data;
+  const { error } = await db.rpc("os_edit_order", {
+    target: id,
+    new_title: title,
+    new_priority: priority,
+    detail_patch: { ...previous.details, ...details },
+  });
+  if (error) return actionFailed(`/ordens/${id}`);
+  revalidatePath(`/ordens/${id}`);
+}
+
+export async function editOrderControlled(form: FormData) {
+  const input = orderVersionedSchema
+    .extend({
+      title: z.string().trim().min(3).max(fieldLimits.title),
+      observation: z.string().trim().max(fieldLimits.observation),
+      has_material: z.enum(["Não informado", "Sim", "Não"]),
+      police_report: z.string().trim().max(fieldLimits.policeReport),
+      priority: z.enum(priorities),
+      priority_reason: z.string().trim().max(2_000),
+    })
+    .safeParse(Object.fromEntries(form));
+  if (!input.success) return invalidOrderAction(form, "EDIT");
+  const { db } = await session();
+  await requireActionPermission(db, orderActionPermissions.EDIT, `/ordens/${input.data.id}`, "EDIT");
+  const { id, version, title, priority, priority_reason, ...details } =
+    input.data;
+  const { data: previous, error: readError } = await db
+    .from("os_orders")
+    .select("details")
+    .eq("id", id)
+    .single();
+  if (readError)
+    return orderActionFailed(`/ordens/${id}`, readError, "EDIT");
+  if (!previous)
+    return actionFailed(`/ordens/${id}`, "not_found", "EDIT");
+  const { error } = await db.rpc("os_edit_order_controlled", {
+    target: id,
+    expected_version: version,
+    new_title: title,
+    new_priority: priority,
+    priority_justification: priority_reason,
+    detail_patch: { ...previous.details, ...details },
+  });
+  if (error) return orderActionFailed(`/ordens/${id}`, error, "EDIT");
+  refreshOrder(id);
+}
+
+export async function updateOrderLinksLegacy(form: FormData) {
+  const { db, admin } = await session();
+  requireAdministrator(admin);
+  await requireActionPermission(db, orderActionPermissions.EDIT, orderPath(form), "UPDATE_LINKS_LEGACY");
+  await requireActionPermission(db, orderActionPermissions.ASSIGN, orderPath(form), "UPDATE_LINKS_LEGACY");
+  const id = z.uuid().parse(formText(form, "id"));
+  const unit = z.uuid().parse(formText(form, "unit_id"));
+  const responsible = formText(form, "responsible_id");
+  const author = formText(form, "opened_by");
+  const category = z.uuid().parse(formText(form, "category_id"));
+  for (const [value, role] of [
+    [responsible, roleNames.responsible],
+    [author, roleNames.requester],
+  ] as const) {
+    if (!value) continue;
+    z.uuid().parse(value);
+    const { data, error } = await db
+      .from("os_memberships")
+      .select("id")
+      .eq("user_id", value)
+      .eq("unit_id", unit)
+      .eq("role", role)
+      .eq("active", true)
+      .limit(1);
+    if (error || !data?.length) return actionFailed(`/ordens/${id}`);
+  }
+  const { error } = await db.rpc("os_assign_order", {
+    target: id,
+    target_unit: unit,
+    target_responsible: responsible || null,
+    target_opened_by: author || null,
+    target_category: category,
+  });
+  if (error) return actionFailed(`/ordens/${id}`);
+  revalidatePath(`/ordens/${id}`);
+}
+
+export async function addMessage(form: FormData) {
+  const { db, user } = await session();
+  const id = z.uuid().parse(formText(form, "id"));
+  await requireActionPermission(db, orderActionPermissions.ADD_MESSAGE, `/ordens/${id}`, "ADD_MESSAGE");
+  const body = z
+    .string()
+    .trim()
+    .min(1)
+    .max(fieldLimits.message)
+    .parse(formText(form, "body"));
+  const { error } = await db
+    .from("os_messages")
+    .insert({ order_id: id, author_id: user.id, body });
+  if (error) return actionFailed(`/ordens/${id}`);
+  revalidatePath(`/ordens/${id}`);
+}

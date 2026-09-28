@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.env*
+!.env.example
+.vercel/
+supabase/.temp/
+*.tsbuildinfo
+migration-output/
+test-results/

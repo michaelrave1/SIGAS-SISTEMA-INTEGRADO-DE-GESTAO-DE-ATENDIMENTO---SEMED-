@@ -1,0 +1,192 @@
+"use client";
+import { useState } from "react";
+import {
+  priorities,
+  type Catalog,
+  type CatalogDataKey,
+  type Unit,
+} from "@/lib/domain";
+import { createOrder } from "@/app/actions";
+import { fieldLimits } from "@/lib/application-config";
+
+type UnitOption = Pick<Unit, "id" | "name">;
+type CatalogOption = Pick<Catalog, "id" | "kind" | "name" | "data">;
+
+export function OrderForm({
+  units,
+  categories,
+  catalogs,
+}: {
+  units: UnitOption[];
+  categories: CatalogOption[];
+  catalogs: CatalogOption[];
+}) {
+  const [area, setArea] = useState("");
+  const [nature, setNature] = useState("");
+  const [type, setType] = useState("");
+  const unique = (key: CatalogDataKey, rows: CatalogOption[]) =>
+    [...new Set(rows.map((c) => c.data[key]).filter(Boolean))].sort();
+  const filtered = categories.filter(
+    (c) =>
+      (!area || c.data.area === area) &&
+      (!nature || c.data.nature === nature) &&
+      (!type || c.data.type === type),
+  );
+  return (
+    <form action={createOrder} className="card form-grid">
+      <label className="span-2">
+        Título da solicitação
+        <input
+          name="title"
+          minLength={3}
+          maxLength={fieldLimits.title}
+          required
+          placeholder="Descreva brevemente o serviço necessário"
+        />
+      </label>
+      <label>
+        Unidade
+        <select name="unit_id" required>
+          <option value="">Selecione</option>
+          {units.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Prioridade
+        <select name="priority" defaultValue="Normal" required>
+          {priorities.map((priority) => (
+            <option key={priority}>{priority}</option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Área
+        <select
+          value={area}
+          onChange={(e) => {
+            setArea(e.target.value);
+            setNature("");
+            setType("");
+          }}
+          required
+        >
+          <option value="">Selecione</option>
+          {unique("area", categories).map((v) => (
+            <option key={v}>{v}</option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Natureza
+        <select
+          value={nature}
+          onChange={(e) => {
+            setNature(e.target.value);
+            setType("");
+          }}
+          required
+          disabled={!area}
+        >
+          <option value="">Selecione</option>
+          {unique(
+            "nature",
+            categories.filter((c) => c.data.area === area),
+          ).map((v) => (
+            <option key={v}>{v}</option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Tipo
+        <select
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+          required
+          disabled={!nature}
+        >
+          <option value="">Selecione</option>
+          {unique(
+            "type",
+            categories.filter(
+              (c) => c.data.area === area && c.data.nature === nature,
+            ),
+          ).map((v) => (
+            <option key={v}>{v}</option>
+          ))}
+        </select>
+      </label>
+      <label className="span-2">
+        Descrição e detalhamento
+        <select
+          key={`${area}/${nature}/${type}`}
+          name="category_id"
+          required
+          disabled={!type}
+        >
+          <option value="">Selecione a classificação</option>
+          {filtered.map((c) => (
+            <option key={c.id} value={c.id}>
+              {[c.data.description, c.data.detail]
+                .filter(Boolean)
+                .join(" · ") || c.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Possui material?
+        <select name="has_material">
+          <option>Não informado</option>
+          <option>Sim</option>
+          <option>Não</option>
+        </select>
+      </label>
+      <label>
+        Data do ocorrido
+        <input type="datetime-local" name="occurred_at" />
+      </label>
+      {[
+        ["drivers", "driver", "Motorista"],
+        ["vehicles", "vehicle", "Veículo"],
+        ["routes", "route", "Rota"],
+      ].map(([kind, name, label]) => (
+        <label key={kind}>
+          {label}
+          <select name={name}>
+            <option value="">Não informado</option>
+            {catalogs
+              .filter((c) => c.kind === kind)
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+          </select>
+        </label>
+      ))}
+      <label>
+        B.O. / REDS
+        <input name="police_report" maxLength={fieldLimits.policeReport} />
+      </label>
+      <label className="span-2">
+        Observações
+        <textarea
+          name="observation"
+          maxLength={fieldLimits.observation}
+          rows={5}
+        />
+      </label>
+      <div className="span-2">
+        <p className="muted">
+          Anexos e mensagens poderão ser adicionados após a abertura. A
+          atribuição da equipe será feita pela administração.
+        </p>
+        <button>Abrir ordem de serviço</button>
+      </div>
+    </form>
+  );
+}
