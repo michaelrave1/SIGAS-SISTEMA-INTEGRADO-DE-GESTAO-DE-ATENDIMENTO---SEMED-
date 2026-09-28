@@ -1,4 +1,4 @@
-export const institutionalGoogleDomain = "edu.uberabadigital.com.br";
+export const institutionalGoogleDomains = ["edu.uberabadigital.com.br", "uberabadigital.com.br"];
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function normalizeInstitutionalEmail(value: string) {
@@ -10,10 +10,10 @@ export function normalizeGoogleDomain(value: string) {
 }
 
 export function allowedGoogleDomains(
-  configured = process.env.ALLOWED_GOOGLE_DOMAINS ?? institutionalGoogleDomain,
+  configured = process.env.ALLOWED_GOOGLE_DOMAINS ?? institutionalGoogleDomains.join(","),
 ): string[] {
   return [...new Set(configured.split(",").map(normalizeGoogleDomain).filter(Boolean))]
-    .filter((domain) => domain === institutionalGoogleDomain);
+    .filter((domain) => institutionalGoogleDomains.includes(domain));
 }
 
 export function institutionalEmailDomain(email: string) {
@@ -28,6 +28,6 @@ export function isAllowedGoogleEmail(
 ) {
   const normalized = normalizeInstitutionalEmail(email);
   return normalized.length <= 254 && emailPattern.test(normalized) &&
-    institutionalEmailDomain(normalized) === institutionalGoogleDomain &&
+    institutionalGoogleDomains.includes(institutionalEmailDomain(normalized)) &&
     domains.includes(institutionalEmailDomain(normalized));
 }

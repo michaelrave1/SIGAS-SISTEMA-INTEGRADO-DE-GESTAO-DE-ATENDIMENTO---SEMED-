@@ -21,19 +21,22 @@ test("normaliza e-mail institucional sem alterar a parte local", () => {
   assert.equal(normalizeInstitutionalEmail("  Pessoa.SEMED@EDU.EXEMPLO.BR "), "pessoa.semed@edu.exemplo.br");
 });
 
-test("aceita exclusivamente o domínio institucional mesmo com configuração ampliada", () => {
-  assert.deepEqual(allowedGoogleDomains(" gmail.com, @edu.uberabadigital.com.br,EDU.UBERABADIGITAL.COM.BR "), [
+test("aceita exclusivamente os dois domínios institucionais mesmo com configuração ampliada", () => {
+  assert.deepEqual(allowedGoogleDomains(" gmail.com, @edu.uberabadigital.com.br,EDU.UBERABADIGITAL.COM.BR, @UBERABADIGITAL.COM.BR "), [
     "edu.uberabadigital.com.br",
+    "uberabadigital.com.br",
   ]);
   assert.equal(isAllowedGoogleEmail(" Pessoa@EDU.UBERABADIGITAL.COM.BR ", ["edu.uberabadigital.com.br"]), true);
   assert.equal(isAllowedGoogleEmail("a@gmail.com", ["gmail.com"]), false);
   assert.deepEqual(allowedGoogleDomains("gmail.com"), []);
   assert.deepEqual(allowedGoogleDomains(""), []);
+  assert.equal(isAllowedGoogleEmail(" Pessoa@UBERABADIGITAL.COM.BR ", ["uberabadigital.com.br"]), true);
+  assert.equal(isAllowedGoogleEmail("a@uberabadigital.com.br", ["edu.uberabadigital.com.br"]), false);
 });
 
 test("recusa domínio não permitido e não aceita subdomínio implicitamente", () => {
-  const domains = ["edu.uberabadigital.com.br"];
-  for (const email of ["a@gmail.com", "a@outra.edu.uberabadigital.com.br", "a@edu.uberabadigital.com.br.evil.com", "a@@edu.uberabadigital.com.br", "a@uberabadigital.com.br"]) {
+  const domains = ["edu.uberabadigital.com.br", "uberabadigital.com.br"];
+  for (const email of ["a@gmail.com", "a@outra.edu.uberabadigital.com.br", "a@edu.uberabadigital.com.br.evil.com", "a@@edu.uberabadigital.com.br", "a@outra.uberabadigital.com.br", "a@uberabadigital.com.br.evil.com"]) {
     assert.equal(isAllowedGoogleEmail(email, domains), false, email);
   }
 });

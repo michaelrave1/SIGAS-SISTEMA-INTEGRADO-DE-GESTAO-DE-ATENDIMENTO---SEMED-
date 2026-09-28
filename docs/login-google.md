@@ -2,16 +2,16 @@
 
 ## Fluxo revisado
 
-`src/app/actions/auth.ts` executa `supabase.auth.signInWithOAuth({ provider: "google" })` no servidor. Solicita somente `openid email profile`, seleciona a conta e envia `hd=edu.uberabadigital.com.br`. `hd` é apenas uma orientação ao Google: a autorização real é validada no callback.
+`src/app/actions/auth.ts` executa `supabase.auth.signInWithOAuth({ provider: "google" })` no servidor. Solicita somente `openid email profile`, seleciona a conta sem fixar o parâmetro `hd` em um único domínio. A autorização dos dois domínios é validada no callback.
 
 O `redirectTo` é `${applicationOrigin()}/auth/callback`. A origem é obtida de `NEXT_PUBLIC_APP_URL`; se ausente, o código usa os cabeçalhos Origin/Host da requisição. Em produção configure explicitamente:
 
 ```dotenv
 NEXT_PUBLIC_APP_URL=https://os-semed.vercel.app
-ALLOWED_GOOGLE_DOMAINS=edu.uberabadigital.com.br
+ALLOWED_GOOGLE_DOMAINS=edu.uberabadigital.com.br,uberabadigital.com.br
 ```
 
-O domínio institucional é o único aceito pelo código, mesmo se a lista de configuração incluir outros domínios. Configuração explicitamente vazia desabilita o botão. Na ausência da variável, o domínio institucional é o padrão.
+Somente os domínios exatos `edu.uberabadigital.com.br` e `uberabadigital.com.br` são aceitos pelo código, mesmo se a configuração incluir outros domínios. Configuração explicitamente vazia desabilita o botão. Na ausência da variável, os dois domínios institucionais são o padrão.
 
 `src/app/auth/callback/route.ts` recebe o código, chama `exchangeCodeForSession(code)` e consulta `getUser()`. O cliente SSR persiste a sessão em cookies usando `cookies()` do Next.js. A rota verifica identidade Google, e-mail confirmado e domínio exato, rejeitando contas externas e subdomínios e encerrando a sessão local. Depois exige o vínculo profissional através de `os_claim_professional_identity` e determina a primeira rota autorizada. Não concede acesso apenas por pertencer ao domínio.
 
@@ -34,6 +34,6 @@ Client ID e Client Secret do Google são configurados somente no Supabase Google
 
 Conforme a instrução final, o formulário de e-mail/senha, a função `login` com `signInWithPassword` e sua exportação foram removidos do aplicativo. A tela oferece apenas Google Workspace. Contas, vínculos e dados existentes não foram excluídos. O provedor Email também foi desativado no Supabase; não foi apenas removido o formulário.
 
-A versão com Google exclusivo já estava publicada ao concluir a configuração. O teste completo com a conta institucional passou pelo seletor Google, retornou pelo callback e abriu /painel, sem erros no console. O endereço enviado ao Google confirmou redirect_to=https://os-semed.vercel.app/auth/callback, redirect_uri=https://ouixjkqcuqpfmhmmsdxg.supabase.co/auth/v1/callback e hd=edu.uberabadigital.com.br. A política do callback não substitui a configuração de público interno no Google Workspace nem uma eventual política de cadastro no Supabase Auth para impedir a criação de usuários externos diretamente no provedor.
+A versão com Google exclusivo já estava publicada ao concluir a configuração. O teste completo com a conta institucional passou pelo seletor Google, retornou pelo callback e abriu /painel, sem erros no console. O endereço enviado ao Google confirmou redirect_to=https://os-semed.vercel.app/auth/callback, redirect_uri=https://ouixjkqcuqpfmhmmsdxg.supabase.co/auth/v1/callback. O teste anterior utilizou hd=edu.uberabadigital.com.br; esse filtro foi removido para permitir os dois domínios. A política do callback não substitui a configuração de público interno no Google Workspace nem uma eventual política de cadastro no Supabase Auth para impedir a criação de usuários externos diretamente no provedor.
 
 Referência: https://supabase.com/docs/guides/auth/social-login/auth-google

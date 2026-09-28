@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { configured, supabase } from "@/lib/supabase";
-import { allowedGoogleDomains, institutionalGoogleDomain } from "@/lib/professional-identity";
+import { allowedGoogleDomains } from "@/lib/professional-identity";
 
 async function applicationOrigin() {
   const configuredOrigin = process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -28,8 +28,8 @@ export async function loginWithGoogle() {
     options: {
       redirectTo: `${await applicationOrigin()}/auth/callback`,
       scopes: "openid email profile",
-      // hd orienta o seletor Google; o callback valida o domínio no servidor.
-      queryParams: { prompt: "select_account", hd: institutionalGoogleDomain },
+      // Não fixa hd em um domínio: o callback valida os dois domínios no servidor.
+      queryParams: { prompt: "select_account" },
     },
   });
   if (error || !data.url) redirect("/login?oauth=indisponivel");

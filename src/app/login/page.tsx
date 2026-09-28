@@ -65,7 +65,7 @@ export default async function Login({
                   Entrar com Google Workspace
                 </button>
               </form>
-              <p className="muted">Use sua conta @edu.uberabadigital.com.br.</p>
+              <p className="muted">Use sua conta @edu.uberabadigital.com.br ou @uberabadigital.com.br.</p>
             </>
           ) : (
             <p className="notice">
