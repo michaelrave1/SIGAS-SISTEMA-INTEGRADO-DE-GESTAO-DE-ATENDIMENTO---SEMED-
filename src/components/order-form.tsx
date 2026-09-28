@@ -24,6 +24,8 @@ export function OrderForm({
   const [area, setArea] = useState("");
   const [nature, setNature] = useState("");
   const [type, setType] = useState("");
+  const isSchoolTransport = area === "TRANSPORTE ESCOLAR";
+  const isSchoolSecurity = area === "SEGURANÇA ESCOLAR";
   const unique = (key: CatalogDataKey, rows: CatalogOption[]) =>
     [...new Set(rows.map((c) => c.data[key]).filter(Boolean))].sort();
   const filtered = categories.filter(
@@ -34,16 +36,6 @@ export function OrderForm({
   );
   return (
     <form action={createOrder} className="card form-grid">
-      <label className="span-2">
-        Título da solicitação
-        <input
-          name="title"
-          minLength={3}
-          maxLength={fieldLimits.title}
-          required
-          placeholder="Descreva brevemente o serviço necessário"
-        />
-      </label>
       <label>
         Unidade
         <select name="unit_id" required>
@@ -149,29 +141,32 @@ export function OrderForm({
         Data do ocorrido
         <input type="datetime-local" name="occurred_at" />
       </label>
-      {[
-        ["drivers", "driver", "Motorista"],
-        ["vehicles", "vehicle", "Veículo"],
-        ["routes", "route", "Rota"],
-      ].map(([kind, name, label]) => (
-        <label key={kind}>
-          {label}
-          <select name={name}>
-            <option value="">Não informado</option>
-            {catalogs
-              .filter((c) => c.kind === kind)
-              .map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-          </select>
+      {isSchoolTransport &&
+        [
+          ["drivers", "driver", "Motorista"],
+          ["vehicles", "vehicle", "Veículo"],
+          ["routes", "route", "Rota"],
+        ].map(([kind, name, label]) => (
+          <label key={kind}>
+            {label}
+            <select name={name}>
+              <option value="">Não informado</option>
+              {catalogs
+                .filter((c) => c.kind === kind)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+        ))}
+      {isSchoolSecurity && (
+        <label>
+          B.O. / REDS
+          <input name="police_report" maxLength={fieldLimits.policeReport} />
         </label>
-      ))}
-      <label>
-        B.O. / REDS
-        <input name="police_report" maxLength={fieldLimits.policeReport} />
-      </label>
+      )}
       <label className="span-2">
         Observações
         <textarea

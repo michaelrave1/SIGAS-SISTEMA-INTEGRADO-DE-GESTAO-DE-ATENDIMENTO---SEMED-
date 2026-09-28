@@ -174,17 +174,16 @@ export type Order = {
   active: boolean;
 };
 export const orderSchema = z.object({
-  title: z.string().trim().min(3).max(fieldLimits.title),
   unit_id: z.uuid(),
   category_id: z.uuid(),
   priority: z.enum(priorities),
   observation: z.string().trim().max(fieldLimits.observation),
   occurred_at: z.string().max(30),
   has_material: z.enum(["Não informado", "Sim", "Não"]),
-  police_report: z.string().trim().max(fieldLimits.policeReport),
-  driver: z.union([z.literal(""), z.uuid()]),
-  vehicle: z.union([z.literal(""), z.uuid()]),
-  route: z.union([z.literal(""), z.uuid()]),
+  police_report: z.string().trim().max(fieldLimits.policeReport).default(""),
+  driver: z.union([z.literal(""), z.uuid()]).default(""),
+  vehicle: z.union([z.literal(""), z.uuid()]).default(""),
+  route: z.union([z.literal(""), z.uuid()]).default(""),
 });
 export function isAdmin(memberships: Membership[]) {
   return memberships.some(

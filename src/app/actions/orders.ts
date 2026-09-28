@@ -57,7 +57,6 @@ export async function createOrder(form: FormData) {
   const input = orderSchema.safeParse(Object.fromEntries(form));
   if (!input.success) return actionFailed("/ordens/nova");
   const {
-    title,
     unit_id,
     category_id,
     priority,
@@ -70,21 +69,32 @@ export async function createOrder(form: FormData) {
     return actionFailed("/ordens/nova");
   const { data: category, error: categoryError } = await db
     .from("os_catalogs")
-    .select("id")
+    .select("id,name,data")
     .eq("id", category_id)
     .eq("kind", "logistics")
     .eq("active", true)
     .single();
   if (categoryError || !category) return actionFailed("/ordens/nova");
+  const area = category.data.area?.trim().toLocaleUpperCase("pt-BR") ?? "";
+  const isSchoolTransport = area === "TRANSPORTE ESCOLAR";
+  const isSchoolSecurity = area === "SEGURANÇA ESCOLAR";
+  const title =
+    [category.data.description, category.data.detail]
+      .filter(Boolean)
+      .join(" · ") || category.name;
+  const { police_report, ...commonDetails } = details;
   const { data, error } = await db.rpc("os_open_order", {
-    order_title: title,
+    order_title: title.slice(0, fieldLimits.title),
     target_unit: unit_id,
     target_category: category_id,
     order_priority: priority,
-    order_details: details,
-    target_driver: driver || null,
-    target_vehicle: vehicle || null,
-    target_route: route || null,
+    order_details: {
+      ...commonDetails,
+      ...(isSchoolSecurity ? { police_report } : {}),
+    },
+    target_driver: isSchoolTransport ? driver || null : null,
+    target_vehicle: isSchoolTransport ? vehicle || null : null,
+    target_route: isSchoolTransport ? route || null : null,
   });
   if (error || !data) return actionFailed("/ordens/nova");
   revalidatePath("/painel");
