@@ -25,10 +25,11 @@ test("callback valida Google, domínio e associação antes do destino autorizad
   assert.match(callback, /resolveFirstAuthorizedRoute/);
 });
 
-test("interface preserva senha legada e remove UUID do fluxo administrativo novo", () => {
+test("interface e ações permitem somente login Google", () => {
   assert.match(loginPage, /Entrar com Google Workspace/);
-  assert.match(loginPage, /Acesso legado temporário/);
-  assert.match(loginPage, /type="password"/);
+  assert.doesNotMatch(loginPage, /Acesso legado|type="password"|name="email"|action=\{login\}/);
+  assert.doesNotMatch(authAction, /signInWithPassword|export async function login\(/);
+  assert.match(authAction, /hd: institutionalGoogleDomain/);
   assert.doesNotMatch(usersPage, /Identificador da conta|name="user_id"|UUID/);
   assert.match(usersPage, /name="email"/);
 });

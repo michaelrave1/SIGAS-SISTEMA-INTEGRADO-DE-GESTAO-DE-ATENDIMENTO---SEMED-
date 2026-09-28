@@ -1,12 +1,8 @@
 "use server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { z } from "zod";
 import { configured, supabase } from "@/lib/supabase";
-import { fieldLimits } from "@/lib/application-config";
-import { actionFailed } from "./shared";
-import { allowedGoogleDomains } from "@/lib/professional-identity";
-import { resolveFirstAuthorizedRoute } from "@/lib/authorization";
+import { allowedGoogleDomains, institutionalGoogleDomain } from "@/lib/professional-identity";
 
 async function applicationOrigin() {
   const configuredOrigin = process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -32,26 +28,12 @@ export async function loginWithGoogle() {
     options: {
       redirectTo: `${await applicationOrigin()}/auth/callback`,
       scopes: "openid email profile",
-      queryParams: { prompt: "select_account" },
+      // hd orienta o seletor Google; o callback valida o domínio no servidor.
+      queryParams: { prompt: "select_account", hd: institutionalGoogleDomain },
     },
   });
   if (error || !data.url) redirect("/login?oauth=indisponivel");
   redirect(data.url);
-}
-
-export async function login(form: FormData) {
-  if (!configured()) redirect("/configuracao");
-  const input = z
-    .object({
-      email: z.email().max(fieldLimits.email),
-      password: z.string().min(1).max(fieldLimits.password),
-    })
-    .safeParse(Object.fromEntries(form));
-  if (!input.success) return actionFailed("/login");
-  const db = await supabase();
-  const { error } = await db.auth.signInWithPassword(input.data);
-  if (error) return actionFailed("/login");
-  redirect(await resolveFirstAuthorizedRoute(db));
 }
 
 export async function logout() {

@@ -89,14 +89,14 @@ test("Nova OS aparece somente na listagem de ordens e exige permissão", async (
     assert.doesNotMatch(source, /href="\/ordens\/nova"/);
 });
 
-test("login legado, OAuth e raiz compartilham o resolvedor de destino", async () => {
+test("OAuth e raiz compartilham o resolvedor de destino", async () => {
   const [auth, callback, root, notFound] = await Promise.all([
     read("src/app/actions/auth.ts"),
     read("src/app/auth/callback/route.ts"),
     read("src/app/page.tsx"),
     read("src/app/not-found.tsx"),
   ]);
-  for (const source of [auth, callback, root])
+  for (const source of [callback, root])
     assert.match(source, /resolveFirstAuthorizedRoute/);
   assert.doesNotMatch(`${auth}\n${callback}\n${root}`, /redirect\("\/painel"\)/);
   assert.match(notFound, /href="\/"/);

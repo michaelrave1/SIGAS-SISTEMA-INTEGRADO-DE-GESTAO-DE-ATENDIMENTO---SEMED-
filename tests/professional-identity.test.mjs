@@ -21,17 +21,21 @@ test("normaliza e-mail institucional sem alterar a parte local", () => {
   assert.equal(normalizeInstitutionalEmail("  Pessoa.SEMED@EDU.EXEMPLO.BR "), "pessoa.semed@edu.exemplo.br");
 });
 
-test("aceita múltiplos domínios configurados sem duplicações", () => {
-  assert.deepEqual(allowedGoogleDomains(" escola.gov.br, @semed.gov.br,ESCOLA.GOV.BR "), [
-    "escola.gov.br",
-    "semed.gov.br",
+test("aceita exclusivamente o domínio institucional mesmo com configuração ampliada", () => {
+  assert.deepEqual(allowedGoogleDomains(" gmail.com, @edu.uberabadigital.com.br,EDU.UBERABADIGITAL.COM.BR "), [
+    "edu.uberabadigital.com.br",
   ]);
-  assert.equal(isAllowedGoogleEmail("a@semed.gov.br", ["escola.gov.br", "semed.gov.br"]), true);
+  assert.equal(isAllowedGoogleEmail(" Pessoa@EDU.UBERABADIGITAL.COM.BR ", ["edu.uberabadigital.com.br"]), true);
+  assert.equal(isAllowedGoogleEmail("a@gmail.com", ["gmail.com"]), false);
+  assert.deepEqual(allowedGoogleDomains("gmail.com"), []);
+  assert.deepEqual(allowedGoogleDomains(""), []);
 });
 
 test("recusa domínio não permitido e não aceita subdomínio implicitamente", () => {
-  assert.equal(isAllowedGoogleEmail("a@gmail.com", ["semed.gov.br"]), false);
-  assert.equal(isAllowedGoogleEmail("a@outra.semed.gov.br", ["semed.gov.br"]), false);
+  const domains = ["edu.uberabadigital.com.br"];
+  for (const email of ["a@gmail.com", "a@outra.edu.uberabadigital.com.br", "a@edu.uberabadigital.com.br.evil.com", "a@@edu.uberabadigital.com.br", "a@uberabadigital.com.br"]) {
+    assert.equal(isAllowedGoogleEmail(email, domains), false, email);
+  }
 });
 
 test("migration implementa os dez cenários obrigatórios de identidade", async (t) => {
@@ -75,7 +79,7 @@ test("migration implementa os dez cenários obrigatórios de identidade", async 
       [first, "first@one.edu", google], [unknown, "unknown@one.edu", google],
       [inactive, "inactive@one.edu", google], [other, "takeover@one.edu", google],
       [takeover, "takeover@one.edu", google], [noMembership, "nomember@one.edu", google],
-      [multi, "multi@two.edu", google], [deactivated, "deactivated@one.edu", google],
+      [multi, "multi@edu.uberabadigital.com.br", google], [deactivated, "deactivated@one.edu", google],
     ];
     for (const [id, email, metadata] of users)
       await db.query("insert into auth.users(id,email,raw_app_meta_data,email_confirmed_at) values($1,$2,$3,now())", [id,email,metadata]);
@@ -92,9 +96,9 @@ test("migration implementa os dez cenários obrigatórios de identidade", async 
       `select os_save_professional_membership(null,null,'${email}','${name}','','',${unit ? `'${unit}'` : "null"},'${role}',${active},${active}) as id`);
     await save("first@one.edu", "Primeiro acesso", unitA, "solicitante");
     await save("inactive@one.edu", "Inativo", unitA, "solicitante", false);
-    await save("multi@two.edu", "Múltiplos vínculos", unitA, "solicitante");
-    const multiProfessional = (await db.query("select id from os_professionals where institutional_email='multi@two.edu'")).rows[0].id;
-    await asUser(admin, `select os_save_professional_membership(null,'${multiProfessional}','multi@two.edu','Múltiplos vínculos','','','${unitB}','responsavel',true,true)`);
+    await save("multi@edu.uberabadigital.com.br", "Múltiplos vínculos", unitA, "solicitante");
+    const multiProfessional = (await db.query("select id from os_professionals where institutional_email='multi@edu.uberabadigital.com.br'")).rows[0].id;
+    await asUser(admin, `select os_save_professional_membership(null,'${multiProfessional}','multi@edu.uberabadigital.com.br','Múltiplos vínculos','','','${unitB}','responsavel',true,true)`);
     await db.exec(`
       insert into os_professionals(institutional_email,name) values('nomember@one.edu','Sem vínculo');
     `);
@@ -119,7 +123,7 @@ test("migration implementa os dez cenários obrigatórios de identidade", async 
       assert.equal((await claim(unknown)).result, "not_registered");
     });
     await t.test("domínio não permitido é barrado antes da associação", () => {
-      assert.equal(isAllowedGoogleEmail("pessoa@gmail.com", ["one.edu", "two.edu"]), false);
+      assert.equal(isAllowedGoogleEmail("pessoa@gmail.com", ["one.edu", "edu.uberabadigital.com.br"]), false);
     });
     await t.test("profissional inativo não recebe identidade", async () => {
       assert.equal((await claim(inactive)).result, "inactive");
@@ -140,8 +144,8 @@ test("migration implementa os dez cenários obrigatórios de identidade", async 
       assert.equal((await claim(deactivated)).result, "inactive");
       assert.equal(Number((await db.query(`select count(*)::int n from os_memberships where professional_id='${professional.id}' and active`)).rows[0].n), 0);
     });
-    await t.test("múltiplos domínios configurados associam pelo e-mail exato", async () => {
-      assert.equal(isAllowedGoogleEmail("multi@two.edu", ["one.edu", "two.edu"]), true);
+    await t.test("domínio institucional associa pelo e-mail exato", async () => {
+      assert.equal(isAllowedGoogleEmail("multi@edu.uberabadigital.com.br", ["one.edu", "edu.uberabadigital.com.br"]), true);
       assert.equal((await claim(multi)).result, "linked");
     });
     await t.test("papéis em unidades diferentes são preservados no primeiro vínculo", async () => {

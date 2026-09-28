@@ -1,6 +1,5 @@
-import { login, loginWithGoogle } from "@/app/actions";
+import { loginWithGoogle } from "@/app/actions";
 import { configured } from "@/lib/supabase";
-import { fieldLimits } from "@/lib/application-config";
 import Link from "next/link";
 import { allowedGoogleDomains } from "@/lib/professional-identity";
 
@@ -17,9 +16,9 @@ const oauthMessages: Record<string, string> = {
 export default async function Login({
   searchParams,
 }: {
-  searchParams: Promise<{ erro?: string; logout?: string; oauth?: string }>;
+  searchParams: Promise<{ logout?: string; oauth?: string }>;
 }) {
-  const { erro, logout, oauth } = await searchParams;
+  const { logout, oauth } = await searchParams;
   const googleConfigured = allowedGoogleDomains().length > 0;
   return (
     <main className="login-page">
@@ -46,12 +45,6 @@ export default async function Login({
           <span className="eyebrow">ORDENS DE SERVIÇO</span>
           <h2>Bem-vindo ao OS SEMED</h2>
           <p className="muted">Acesse com sua conta institucional.</p>
-          {erro && (
-            <p role="alert" className="notice danger">
-              Não foi possível entrar. Verifique suas credenciais e tente
-              novamente.
-            </p>
-          )}
           {logout === "erro" && (
             <p role="alert" className="notice danger">
               Não foi possível confirmar o encerramento completo da sessão.
@@ -72,30 +65,7 @@ export default async function Login({
                   Entrar com Google Workspace
                 </button>
               </form>
-              <div className="login-divider"><span>Acesso legado temporário</span></div>
-              <form action={login}>
-              <label>
-                E-mail institucional
-                <input
-                  name="email"
-                  type="email"
-                  autoComplete="username"
-                  required
-                  maxLength={fieldLimits.email}
-                />
-              </label>
-              <label>
-                Senha
-                <input
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  maxLength={fieldLimits.password}
-                />
-              </label>
-              <button>Entrar no sistema →</button>
-              </form>
+              <p className="muted">Use sua conta @edu.uberabadigital.com.br.</p>
             </>
           ) : (
             <p className="notice">
