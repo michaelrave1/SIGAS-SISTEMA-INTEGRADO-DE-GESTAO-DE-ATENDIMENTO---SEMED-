@@ -67,6 +67,15 @@ export const roles = [
   roleNames.responsible,
 ] as const;
 export type Role = (typeof roles)[number];
+export const roleLabels: Record<Role, string> = {
+  admin: "Administrador",
+  gestor: "Gestor",
+  solicitante: "Solicitante",
+  responsavel: "Responsável",
+};
+export function normalizeAreaName(value: string) {
+  return value.trim().toLocaleUpperCase("pt-BR");
+}
 export type Membership = {
   id: string;
   user_id: string | null;

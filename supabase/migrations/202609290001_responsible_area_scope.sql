@@ -1,8 +1,45 @@
 -- Vincula responsáveis a uma área do catálogo e limita a leitura de OS a ela.
 begin;
 
+update public.os_catalogs
+set data=jsonb_set(
+  data,'{area}',to_jsonb(upper(btrim(data->>'area'))),true
+)
+where kind='logistics' and nullif(btrim(data->>'area'),'') is not null
+  and data->>'area' is distinct from upper(btrim(data->>'area'));
+
+create function os_private.normalize_catalog_area()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  if new.kind='logistics' and nullif(btrim(new.data->>'area'),'') is not null then
+    new.data:=jsonb_set(
+      new.data,'{area}',to_jsonb(upper(btrim(new.data->>'area'))),true
+    );
+  end if;
+  return new;
+end;
+$$;
+create trigger catalogs_normalize_area
+  before insert or update of data,kind on public.os_catalogs
+  for each row execute function os_private.normalize_catalog_area();
+
 alter table public.os_memberships
-  add column area text check (area is null or length(btrim(area)) between 1 and 500);
+  add column area text check (
+    area is null or (
+      length(btrim(area)) between 1 and 500 and area=upper(btrim(area))
+    )
+  );
+
+create function os_private.normalize_membership_area()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  new.area:=nullif(upper(btrim(new.area)),'');
+  return new;
+end;
+$$;
+create trigger memberships_normalize_area
+  before insert or update of area on public.os_memberships
+  for each row execute function os_private.normalize_membership_area();
 
 create index os_memberships_responsible_area
   on public.os_memberships(area,user_id)
@@ -50,12 +87,32 @@ begin
 end;
 $$;
 
+create function os_private.sync_catalog_area_assignments()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  delete from public.os_order_area_assignments assignment
+  using public.os_orders o
+  where assignment.order_id=o.id and o.category_id=new.id;
+  insert into public.os_order_area_assignments(order_id,membership_id)
+  select o.id,m.id
+  from public.os_orders o
+  join public.os_memberships m on m.active and m.role='responsavel'
+  where o.category_id=new.id and new.kind='logistics'
+    and m.area is not null and m.area=btrim(new.data->>'area')
+  on conflict do nothing;
+  return new;
+end;
+$$;
+
 create trigger orders_sync_area_assignments
   after insert or update of category_id on public.os_orders
   for each row execute function os_private.sync_order_area_assignments();
 create trigger memberships_sync_area_assignments
   after insert or update of area,role,active on public.os_memberships
   for each row execute function os_private.sync_membership_area_assignments();
+create trigger catalogs_sync_area_assignments
+  after update of data,kind on public.os_catalogs
+  for each row execute function os_private.sync_catalog_area_assignments();
 
 insert into public.os_order_area_assignments(order_id,membership_id)
 select o.id,m.id
@@ -100,7 +157,7 @@ create function public.os_save_professional_membership(
 ) returns uuid language plpgsql security definer set search_path = '' as $$
 declare
   saved_membership uuid;
-  normalized_area text := nullif(btrim(target_area),'');
+  normalized_area text := nullif(upper(btrim(target_area)),'');
 begin
   perform os_private.require_permission(case
     when not professional_active or not membership_active then 'professionals.delete'
@@ -335,6 +392,12 @@ revoke all on function os_private.is_area_responsible(public.os_orders)
 revoke all on function os_private.sync_order_area_assignments()
   from public,anon,authenticated;
 revoke all on function os_private.sync_membership_area_assignments()
+  from public,anon,authenticated;
+revoke all on function os_private.normalize_catalog_area()
+  from public,anon,authenticated;
+revoke all on function os_private.normalize_membership_area()
+  from public,anon,authenticated;
+revoke all on function os_private.sync_catalog_area_assignments()
   from public,anon,authenticated;
 grant execute on function public.os_professional_memberships(integer,integer) to authenticated;
 grant execute on function public.os_save_professional_membership(

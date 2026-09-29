@@ -78,6 +78,9 @@ export function mapSeed(seed) {
       }),
     );
   }
+  for (const catalog of catalogs)
+    if (catalog.kind === "logistics" && catalog.data.area)
+      catalog.data.area = catalog.data.area.trim().toLocaleUpperCase("pt-BR");
   const orders = (seed.ABERTURA_OS ?? []).map((r, i) => {
     const matches = units.filter((u) => u.name === r.ESTABELECIMENTO);
     const id = stableId("orders", sourceKey(r, i));

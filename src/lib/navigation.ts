@@ -56,7 +56,7 @@ export const navigationItems: readonly NavigationItem[] = [
   {
     id: "access_profiles",
     href: "/perfis",
-    label: "Perfis e Permissões",
+    label: "Perfis e permissões",
     permission: "professionals.manage",
     section: "administration",
     requiresAdministrator: true,
@@ -127,10 +127,10 @@ const staticContexts: Readonly<Record<string, NavigationContext>> = {
     breadcrumbs: [{ label: "Cadastros" }, { label: "Profissionais" }],
   },
   "/perfis": {
-    title: "Perfis e Permissões",
+    title: "Perfis e permissões",
     breadcrumbs: [
       { label: "Administração" },
-      { label: "Perfis e Permissões" },
+      { label: "Perfis e permissões" },
     ],
   },
   "/auditoria": {

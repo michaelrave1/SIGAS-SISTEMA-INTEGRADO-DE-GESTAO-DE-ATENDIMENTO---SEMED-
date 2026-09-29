@@ -5,6 +5,7 @@ import { z } from "zod";
 import { fieldLimits } from "@/lib/application-config";
 import {
   catalogFields,
+  normalizeAreaName,
   roleNames,
   roles,
   type CatalogData,
@@ -45,6 +46,8 @@ export async function saveCatalog(form: FormData) {
   const data: CatalogData = {};
   for (const [key] of catalogFields[catalogKind].fields)
     data[key] = z.string().trim().max(fieldLimits.catalogValue).parse(formText(form, key));
+  if (catalogKind === "logistics" && data.area)
+    data.area = normalizeAreaName(data.area);
   if (data.link) {
     const url = z.url().parse(data.link);
     if (!["https:", "http:"].includes(new URL(url).protocol)) return actionFailed(`/cadastros/${catalogKind}`);

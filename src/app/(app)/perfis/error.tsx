@@ -3,7 +3,7 @@
 export default function AccessProfilesError({ reset }: { reset: () => void }) {
   return (
     <section className="card">
-      <h1>Perfis e Permissões</h1>
+      <h1>Perfis e permissões</h1>
       <p className="notice danger" role="alert">
         Não foi possível carregar os perfis e permissões.
       </p>

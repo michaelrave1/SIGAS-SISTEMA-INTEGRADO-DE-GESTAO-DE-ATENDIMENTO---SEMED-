@@ -61,7 +61,7 @@ export function OrderFilters({
           <input
             name="q"
             defaultValue={values.q}
-            placeholder="Título da solicitação"
+            placeholder="Solicitação ou classificação"
             maxLength={100}
           />
         </label>

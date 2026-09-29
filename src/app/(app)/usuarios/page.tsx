@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { session } from "@/lib/session";
-import { roleNames, type Role } from "@/lib/domain";
+import { normalizeAreaName, roleLabels, roleNames, type Role } from "@/lib/domain";
 import { Heading, Notice, Pagination } from "@/components/ui";
 import { pageNumber } from "@/lib/pagination";
 import { fieldLimits, queryLimits } from "@/lib/application-config";
@@ -58,7 +58,7 @@ export default async function Users({ searchParams }: {
   ]);
   ensureQueriesSucceeded([units, memberships, categoryAreas], "Falha ao consultar profissionais");
   const areas = [...new Set((categoryAreas.data ?? [])
-    .map((category) => category.data.area?.trim())
+    .map((category) => category.data.area ? normalizeAreaName(category.data.area) : "")
     .filter((area): area is string => Boolean(area)))]
     .sort((left, right) => left.localeCompare(right, "pt-BR"));
   const rows = memberships.data ?? [];
@@ -84,7 +84,7 @@ export default async function Users({ searchParams }: {
           </td>
           <td>{units.data?.find((unit) => unit.id === membership.unit_id)?.name ?? "Secretaria / rede"}</td>
           <td>{membership.area ?? "—"}</td>
-          <td>{membership.role ?? "Sem vínculo"}</td>
+          <td>{membership.role ? roleLabels[membership.role as Role] : "Sem vínculo"}</td>
           <td>{membership.professional_active && membership.membership_active ? "Ativo" : "Inativo"}</td>
           <td>{canSelect && membership.membership_id && <Link href={`/usuarios?page=${page}&edit=${membership.membership_id}`}>Administrar</Link>}</td>
         </tr>)}</tbody>

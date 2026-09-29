@@ -59,8 +59,8 @@ export function OrderWorkflowActions({
           <p className="eyebrow">AÇÕES</p>
           <h2>Operações disponíveis</h2>
           <p className="muted">
-            As opções abaixo respeitam seu vínculo, a atribuição e o estado atual
-            da ordem.
+            As opções abaixo respeitam seu vínculo com a área, suas permissões e
+            o estado atual da ordem.
           </p>
         </div>
       </div>

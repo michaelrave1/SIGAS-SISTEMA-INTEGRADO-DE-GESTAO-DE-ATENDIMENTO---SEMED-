@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { roleNames, roles, type Role } from "@/lib/domain";
+import { roleLabels, roleNames, roles, type Role } from "@/lib/domain";
 
 export function ProfessionalRoleFields({
   initialRole,
@@ -31,7 +31,9 @@ export function ProfessionalRoleFields({
                 canManage || availableRole !== roleNames.administrator,
             )
             .map((availableRole) => (
-              <option key={availableRole}>{availableRole}</option>
+              <option key={availableRole} value={availableRole}>
+                {roleLabels[availableRole]}
+              </option>
             ))}
         </select>
       </label>

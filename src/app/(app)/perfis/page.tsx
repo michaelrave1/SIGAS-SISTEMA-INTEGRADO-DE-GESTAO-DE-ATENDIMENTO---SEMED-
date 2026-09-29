@@ -102,7 +102,7 @@ export default async function AccessProfilesPage({
   return (
     <>
       <Heading
-        title="Perfis e Permissões"
+        title="Perfis e permissões"
         description="Defina o que cada perfil pode fazer. O acesso aos dados continua limitado pelos vínculos, unidades e regras de negócio."
       />
 

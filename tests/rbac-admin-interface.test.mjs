@@ -18,7 +18,7 @@ test("interface administrativa usa o padrão existente e somente Server Actions"
   assert.match(page, /ActionSubmitButton/);
   assert.match(page, /confirmMessage=/);
   assert.doesNotMatch(page, /\.insert\(|\.update\(|\.delete\(/);
-  assert.match(navigation, /Perfis e Permissões/);
+  assert.match(navigation, /Perfis e permissões/);
   assert.match(shell, /visibleNavigationItems/);
   assert.match(shell, /administrationLinks\.length > 0/);
   assert.match(matrix, /Selecionar todas/);

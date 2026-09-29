@@ -3,7 +3,7 @@ export default function AccessProfilesLoading() {
     <>
       <div className="heading">
         <p className="eyebrow">OS SEMED</p>
-        <h1>Perfis e Permissões</h1>
+        <h1>Perfis e permissões</h1>
         <p className="muted">Carregando perfis e matriz de permissões...</p>
       </div>
       <section className="card" aria-busy="true" aria-live="polite">

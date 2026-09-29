@@ -2,6 +2,7 @@
 import { useState } from "react";
 import {
   priorities,
+  normalizeAreaName,
   type Catalog,
   type CatalogDataKey,
   type Unit,
@@ -24,13 +25,15 @@ export function OrderForm({
   const [area, setArea] = useState("");
   const [nature, setNature] = useState("");
   const [type, setType] = useState("");
-  const isSchoolTransport = area === "TRANSPORTE ESCOLAR";
-  const isSchoolSecurity = area === "SEGURANÇA ESCOLAR";
+  const isSchoolTransport = normalizeAreaName(area) === "TRANSPORTE ESCOLAR";
+  const isSchoolSecurity = normalizeAreaName(area) === "SEGURANÇA ESCOLAR";
   const unique = (key: CatalogDataKey, rows: CatalogOption[]) =>
-    [...new Set(rows.map((c) => c.data[key]).filter(Boolean))].sort();
+    [...new Set(rows.map((c) => c.data[key]).filter(Boolean))]
+      .map((value) => key === "area" ? normalizeAreaName(value ?? "") : value)
+      .sort();
   const filtered = categories.filter(
     (c) =>
-      (!area || c.data.area === area) &&
+      (!area || normalizeAreaName(c.data.area ?? "") === area) &&
       (!nature || c.data.nature === nature) &&
       (!type || c.data.type === type),
   );
@@ -86,7 +89,7 @@ export function OrderForm({
           <option value="">Selecione</option>
           {unique(
             "nature",
-            categories.filter((c) => c.data.area === area),
+            categories.filter((c) => normalizeAreaName(c.data.area ?? "") === area),
           ).map((v) => (
             <option key={v}>{v}</option>
           ))}
@@ -104,7 +107,7 @@ export function OrderForm({
           {unique(
             "type",
             categories.filter(
-              (c) => c.data.area === area && c.data.nature === nature,
+              (c) => normalizeAreaName(c.data.area ?? "") === area && c.data.nature === nature,
             ),
           ).map((v) => (
             <option key={v}>{v}</option>

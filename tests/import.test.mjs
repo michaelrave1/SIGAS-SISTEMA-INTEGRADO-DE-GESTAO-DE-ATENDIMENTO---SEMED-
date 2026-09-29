@@ -12,6 +12,8 @@ test("todos os registros do seed são preservados sem inferir identidade/status"
   const result = mapSeed(seed);
   assert.equal(result.units.length, 93);
   assert.equal(result.catalogs.length, 534);
+  for (const catalog of result.catalogs.filter(({ kind }) => kind === "logistics"))
+    assert.equal(catalog.data.area, catalog.data.area.toLocaleUpperCase("pt-BR"));
   assert.equal(result.orders.length, 5);
   assert.equal(
     result.original.length,

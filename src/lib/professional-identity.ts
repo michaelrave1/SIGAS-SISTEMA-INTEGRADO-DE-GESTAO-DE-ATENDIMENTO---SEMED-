@@ -2,6 +2,9 @@ import "server-only";
 import { z } from "zod";
 import { fieldLimits } from "./application-config";
 import {
+  normalizeAreaName,
+} from "./domain";
+import {
   normalizeInstitutionalEmail,
 } from "./professional-identity-core";
 export * from "./professional-identity-core";
@@ -19,7 +22,7 @@ export const professionalMembershipSchema = z
     position: z.string().trim().max(160),
     role: z.enum(["admin", "gestor", "solicitante", "responsavel"]),
     unit_id: z.union([z.literal(""), z.uuid()]),
-    area: z.string().trim().max(500).default(""),
+    area: z.string().trim().max(500).transform(normalizeAreaName).default(""),
   })
   .superRefine((value, context) => {
     if (!value.professional_id && !value.email) {

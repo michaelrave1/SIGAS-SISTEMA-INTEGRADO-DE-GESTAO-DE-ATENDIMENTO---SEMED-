@@ -457,11 +457,18 @@ test("RLS do novo fluxo separa origem, execução, autoria e dados internos", as
     );
 
     await db.exec(`
-      update os_catalogs set data='{"area":"DETIC"}'::jsonb where id='${category}';
-      update os_memberships set area='DETIC'
-      where user_id in ('${users.assigned}','${users.unassigned}')
-        and role='responsavel';
+      update os_catalogs set data='{"area":"Detic"}'::jsonb where id='${category}';
+      update os_memberships set area=case
+        when user_id='${users.assigned}' then 'detic' else 'DeTiC' end
+      where user_id in ('${users.assigned}','${users.unassigned}') and role='responsavel';
     `);
+    assert.deepEqual(
+      (await db.query(
+        `select distinct area from os_memberships
+         where user_id in ('${users.assigned}','${users.unassigned}')`,
+      )).rows,
+      [{ area: "DETIC" }],
+    );
     assert.equal(
       Number((await db.query(
         `select count(*)::int total from os_order_area_assignments
