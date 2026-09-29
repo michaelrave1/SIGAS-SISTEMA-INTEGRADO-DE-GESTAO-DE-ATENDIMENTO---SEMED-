@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { OrderDelete } from "@/components/order-details/order-delete";
 import { z } from "zod";
 import { Notice } from "@/components/ui";
 import { OrderActivity } from "@/components/order-details/order-activity";
@@ -171,6 +172,7 @@ export default async function OrderPage({
       <OrderHeader order={order} header={orderHeader.data?.[0]} />
       <Notice error={query.erro} />
       <OrderCycle order={order} />
+      {admin && <OrderDelete id={id} version={order.version} />}
       <div className="detail-grid">
         <OrderSummary
           order={order}

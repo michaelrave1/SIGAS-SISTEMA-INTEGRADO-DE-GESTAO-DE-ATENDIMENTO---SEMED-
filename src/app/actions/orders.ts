@@ -37,6 +37,19 @@ function refreshOrder(id: string) {
   revalidatePath("/painel");
 }
 
+export async function deleteOrder(form: FormData) {
+  const { db, admin } = await session();
+  requireAdministrator(admin);
+  const input = orderVersionedSchema.extend({ confirmation: z.literal("EXCLUIR") })
+    .safeParse(Object.fromEntries(form));
+  if (!input.success) return invalidOrderAction(form, "DELETE");
+  const { id, version } = input.data;
+  const { error } = await db.rpc("os_delete_order", { target: id, expected_version: version });
+  if (error) return orderActionFailed(`/ordens/${id}`, error, "DELETE");
+  refreshOrder(id);
+  redirect("/ordens");
+}
+
 function orderPath(form: FormData) {
   const id = z.uuid().safeParse(form.get("id"));
   return id.success ? `/ordens/${id.data}` : "/ordens";

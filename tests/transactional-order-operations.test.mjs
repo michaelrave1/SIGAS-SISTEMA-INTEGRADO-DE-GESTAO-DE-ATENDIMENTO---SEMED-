@@ -435,6 +435,17 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
         `update os_order_events set reason='alterado' where order_id='${order}'`,
       ),
     );
+    for (const user of [ids.requester, ids.tech1, ids.areaManager]) {
+      await assert.rejects(asUser(user, `select os_delete_order('${order}',14)`), /Acesso negado/);
+    }
+    await assert.rejects(asUser(ids.admin, `select os_delete_order('${order}',13)`), /alterada por outro/);
+    await asUser(ids.admin, `select os_delete_order('${order}',14)`);
+    assert.deepEqual((await db.query(`select active,version from os_orders where id='${order}'`)).rows,
+      [{ active: false, version: 15 }]);
+    assert.equal((await asUser(ids.admin, `select id from os_orders where id='${order}'`)).rows.length, 0);
+    assert.equal((await db.query(`select id from os_audit where record_id='${order}' and action='DELETE'`)).rows.length, 1);
+    assert.equal(Number((await db.query(`select count(*) as n from os_order_events where order_id='${order}'`)).rows[0].n), 14);
+    await assert.rejects(asUser(ids.admin, `select os_delete_order('${order}',15)`), /não encontrada/);
   } finally {
     await db.close();
   }

@@ -158,6 +158,10 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      os_delete_order: {
+        Args: { target: string; expected_version: number };
+        Returns: undefined;
+      };
       os_has_permission: {
         Args: { permission_key: string };
         Returns: boolean;
