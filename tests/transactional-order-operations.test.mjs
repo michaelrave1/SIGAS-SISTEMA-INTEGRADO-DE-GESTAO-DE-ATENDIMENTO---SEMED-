@@ -86,6 +86,40 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
         ('${ids.pending}','Pendente para conciliação','A conferir');
     `);
 
+    const convertedManager = (
+      await asUser(
+        ids.admin,
+        `select os_save_professional_membership(
+          null,null,'gestor.area@edu.uberabadigital.com.br','Gestor para conversão',
+          'M-001','Gestor','${ids.unit}','gestor',null,true,true
+        ) as id`,
+      )
+    ).rows[0].id;
+    const convertedProfessional = (
+      await db.query(
+        `select professional_id from os_memberships where id='${convertedManager}'`,
+      )
+    ).rows[0].professional_id;
+    await asUser(
+      ids.admin,
+      `select os_save_professional_membership(
+        '${convertedManager}','${convertedProfessional}',
+        'gestor.area@edu.uberabadigital.com.br','Gestor para conversão',
+        'M-001','Gestor','${ids.unit}','gestor_area','DETIC',true,true
+      )`,
+    );
+    assert.deepEqual(
+      (
+        await db.query(
+          `select m.unit_id,m.area,p.key profile_key
+           from os_memberships m
+           join os_access_profiles p on p.id=m.access_profile_id
+           where m.id='${convertedManager}'`,
+        )
+      ).rows,
+      [{ unit_id: null, area: "DETIC", profile_key: "area_manager" }],
+    );
+
     await assert.rejects(
       asUser(
         ids.admin,
