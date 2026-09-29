@@ -1,4 +1,6 @@
 export const actionErrorCodes = [
+  "professional_configuration",
+  "professional_conflict",
   "validation",
   "conflict",
   "forbidden",
@@ -50,6 +52,8 @@ export function classifyOrderRpcError(error: unknown): ActionErrorCode {
 }
 
 export const actionErrorMessages: Record<ActionErrorCode, string> = {
+  professional_configuration: "O perfil de acesso está indisponível. Solicite ao administrador a verificação da configuração dos perfis.",
+  professional_conflict: "O vínculo não pode ser alterado por possuir associações ou restrições de acesso. Revise os vínculos do profissional.",
   validation: "Revise os campos informados e tente novamente.",
   conflict:
     "A ordem foi alterada por outra pessoa. Atualize a página antes de tentar novamente.",

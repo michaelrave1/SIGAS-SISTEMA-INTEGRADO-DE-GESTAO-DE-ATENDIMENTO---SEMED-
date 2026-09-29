@@ -2,6 +2,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { classifyProfessionalError } from "@/lib/professional-action-error";
+import { logServerEvent } from "@/lib/observability";
+import { currentRequestId } from "@/lib/request-context";
 import { fieldLimits } from "@/lib/application-config";
 import {
   catalogFields,
@@ -215,7 +218,14 @@ export async function saveProfessionalMembership(form: FormData) {
     professional_active: form.get("professional_active") === "on",
     membership_active: form.get("membership_active") === "on",
   });
-  if (error) return actionFailed("/usuarios", "unexpected", "save_professional");
+  if (error) {
+    const status = classifyProfessionalError(error);
+    logServerEvent("warn", "professional_save_failed", {
+      requestId: await currentRequestId(), route: "/usuarios",
+      operation: "save_professional", status, error,
+    });
+    return actionFailed("/usuarios", status, "save_professional");
+  }
   revalidatePath("/usuarios");
   redirect("/usuarios");
 }
