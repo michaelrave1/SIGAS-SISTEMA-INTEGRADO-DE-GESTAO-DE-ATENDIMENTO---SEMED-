@@ -3,7 +3,6 @@ import type { Catalog, Order } from "@/lib/domain";
 
 export type NamedOption = { id: string; name: string };
 export type ResponsibleMembershipOption = NamedOption & {
-  unit_id: string | null;
   user_id: string;
 };
 export type OrderDetail = Pick<
@@ -31,7 +30,7 @@ export type OrderDetail = Pick<
   | "waiting_reason"
   | "waiting_details"
 >;
-export type OrderCatalog = Pick<Catalog, "id" | "kind" | "name">;
+export type OrderCatalog = Pick<Catalog, "id" | "kind" | "name" | "data">;
 export type OrderMessage = Pick<
   Database["public"]["Tables"]["os_messages"]["Row"],
   "id" | "body" | "created_at" | "author_id"

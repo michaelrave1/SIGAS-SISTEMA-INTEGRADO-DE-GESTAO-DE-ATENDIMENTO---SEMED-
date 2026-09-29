@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { session } from "@/lib/session";
 import { catalogFields, isCatalogKind, type Catalog } from "@/lib/domain";
@@ -30,6 +30,7 @@ export default async function CatalogPage({
   const page = pageNumber(p.page);
   const range = pageRange(page);
   const { db, admin } = await session();
+  if (!admin) redirect("/sem-acesso");
   await requirePagePermission(catalogPermission(kind, "view"), db);
   const permissions = await getUserPermissions(db);
   const canCreate =

@@ -46,10 +46,6 @@ export function OrderHeader({
             <dd>{header?.origin_unit_name ?? "Aguardando conciliação"}</dd>
           </div>
           <div>
-            <dt>Unidade executora</dt>
-            <dd>{header?.destination_unit_name ?? "Ainda não encaminhada"}</dd>
-          </div>
-          <div>
             <dt>Responsável</dt>
             <dd>
               {header?.responsible_name ??

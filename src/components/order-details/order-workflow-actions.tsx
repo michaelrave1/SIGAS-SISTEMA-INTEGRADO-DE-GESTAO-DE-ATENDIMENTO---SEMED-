@@ -1,8 +1,8 @@
 import {
+  acceptAssignment,
   assignOrder,
   cancelOrder,
   completeOrder,
-  forwardOrder,
   reassignOrder,
   reconcileOrder,
   reopenOrder,
@@ -116,29 +116,11 @@ export function OrderWorkflowActions({
           </form>
         )}
 
-        {available.has(workflowActionNames.forward) && (
-          <form action={forwardOrder}>
-            {versionFields}
-            <label>
-              Unidade executora
-              <select name="destination_unit_id" required defaultValue="">
-                <option value="">Selecione</option>
-                {units.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button>Encaminhar ordem</button>
-          </form>
-        )}
-
         {available.has(workflowActionNames.assign) && (
           <form action={assignOrder}>
             {versionFields}
             <label>
-              Responsável
+              Profissional que receberá a OS
               <select
                 name="responsible_membership_id"
                 required
@@ -152,7 +134,17 @@ export function OrderWorkflowActions({
                 ))}
               </select>
             </label>
-            <button>Atribuir responsável</button>
+            <button>Encaminhar ao profissional</button>
+          </form>
+        )}
+
+        {available.has(workflowActionNames.acceptAssignment) && (
+          <form action={acceptAssignment}>
+            {versionFields}
+            <p className="muted">
+              Confirme que você assumirá a responsabilidade pelo atendimento.
+            </p>
+            <button>Aceitar atribuição</button>
           </form>
         )}
 
@@ -160,7 +152,7 @@ export function OrderWorkflowActions({
           <form action={reassignOrder}>
             {versionFields}
             <label>
-              Novo responsável
+              Novo profissional responsável pelo atendimento
               <select
                 name="responsible_membership_id"
                 required

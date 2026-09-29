@@ -147,6 +147,7 @@ export const workflowActionNames = {
   triage: "TRIAGE",
   forward: "FORWARD",
   assign: "ASSIGN",
+  acceptAssignment: "ACCEPT_ASSIGNMENT",
   reassign: "REASSIGN",
   startService: "START_SERVICE",
   addServiceEntry: "ADD_SERVICE_ENTRY",

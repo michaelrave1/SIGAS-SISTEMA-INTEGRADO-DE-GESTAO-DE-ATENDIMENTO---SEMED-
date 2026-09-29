@@ -17,6 +17,7 @@ export const orderActionPermissions = {
   TRIAGE: "orders.triage",
   FORWARD: "orders.forward",
   ASSIGN: "orders.assign",
+  ACCEPT_ASSIGNMENT: "orders.attend",
   REASSIGN: "orders.reassign",
   START_SERVICE: "orders.attend",
   ADD_SERVICE_ENTRY: "orders.attend",

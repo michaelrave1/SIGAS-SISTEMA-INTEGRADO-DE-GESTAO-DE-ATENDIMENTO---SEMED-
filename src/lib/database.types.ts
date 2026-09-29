@@ -373,6 +373,13 @@ export type Database = {
             };
         Returns: undefined;
       };
+      os_accept_assignment: {
+        Args: {
+          target: string;
+          expected_version: number;
+        };
+        Returns: undefined;
+      };
       os_edit_order_controlled: {
         Args: {
           target: string;
@@ -476,6 +483,14 @@ export type Database = {
           role: string | null;
           membership_active: boolean | null;
           total_count: number;
+        }[];
+      };
+      os_order_responsible_options: {
+        Args: { target: string };
+        Returns: {
+          id: string;
+          user_id: string;
+          name: string;
         }[];
       };
       os_save_professional_membership: {

@@ -62,6 +62,7 @@ export default async function OrderPage({
     workflowMemberships,
     collaboration,
     orderHeader,
+    responsibleOptions,
   ] = await Promise.all([
     db
       .from("os_messages")
@@ -89,7 +90,7 @@ export default async function OrderPage({
       : Promise.resolve({ data: [], error: null }),
     db
       .from("os_catalogs")
-      .select("id,kind,name")
+      .select("id,kind,name,data")
       .eq("active", true)
       .order("name")
       .limit(queryLimits.lookupRows),
@@ -109,13 +110,14 @@ export default async function OrderPage({
     admin
       ? db
           .from("os_memberships")
-          .select("id,user_id,unit_id,role")
+          .select("id,user_id,unit_id,area,role")
           .eq("active", true)
           .in("role", [roleNames.requester, roleNames.responsible])
           .limit(queryLimits.lookupRows)
       : Promise.resolve({ data: [], error: null }),
     db.rpc("os_order_can_collaborate", { target: id }),
     db.rpc("os_order_header", { target: id }),
+    db.rpc("os_order_responsible_options", { target: id }),
   ]);
 
   ensureQueriesSucceeded(
@@ -132,6 +134,7 @@ export default async function OrderPage({
       workflowMemberships,
       collaboration,
       orderHeader,
+      responsibleOptions,
     ],
     "Falha ao consultar detalhes",
   );
@@ -140,12 +143,6 @@ export default async function OrderPage({
   const catalogRows = (catalogs.data ?? []) as OrderCatalog[];
   const profileName = new Map(
     (profiles.data ?? []).map((profile) => [profile.id, profile.name]),
-  );
-  const unitName = new Map(
-    (units.data ?? []).map((availableUnit) => [
-      availableUnit.id,
-      availableUnit.name,
-    ]),
   );
   const membershipsForWorkflow = workflowMemberships.data ?? [];
   const requesters = Array.from(
@@ -161,16 +158,12 @@ export default async function OrderPage({
         ]),
     ).values(),
   );
-  const responsibleMemberships = membershipsForWorkflow
-    .filter((membership) => membership.role === roleNames.responsible && membership.user_id)
-    .map(
-      (membership): ResponsibleMembershipOption => ({
-        id: membership.id,
-        user_id: membership.user_id!,
-        unit_id: membership.unit_id,
-        name: `${profileName.get(membership.user_id!) ?? "Responsável"} · ${unitName.get(membership.unit_id ?? "") ?? "Unidade não informada"}`,
-      }),
-    );
+  const responsibleMemberships = (responsibleOptions.data ?? [])
+    .map((membership): ResponsibleMembershipOption => ({
+      id: membership.id,
+      user_id: membership.user_id,
+      name: membership.name,
+    }));
   const workflowOperations = availableActions.data ?? [];
 
   return (

@@ -20,7 +20,7 @@ export const professionalMembershipSchema = z
     name: z.string().trim().min(1).max(fieldLimits.profileName),
     registration: z.string().trim().max(80),
     position: z.string().trim().max(160),
-    role: z.enum(["admin", "gestor", "solicitante", "responsavel"]),
+    role: z.enum(["admin", "gestor", "gestor_area", "solicitante", "responsavel"]),
     unit_id: z.union([z.literal(""), z.uuid()]),
     area: z.string().trim().max(500).transform(normalizeAreaName).default(""),
   })
@@ -49,18 +49,32 @@ export const professionalMembershipSchema = z
         message: "Administrador deve possuir escopo global",
       });
     }
-    if (value.role === "responsavel" && !value.area) {
+    if (
+      (value.role === "responsavel" || value.role === "gestor_area") &&
+      !value.area
+    ) {
       context.addIssue({
         code: "custom",
         path: ["area"],
-        message: "Área obrigatória para o responsável",
+        message: "Área obrigatória para este perfil",
       });
     }
-    if (value.role !== "responsavel" && value.area) {
+    if (
+      value.role !== "responsavel" &&
+      value.role !== "gestor_area" &&
+      value.area
+    ) {
       context.addIssue({
         code: "custom",
         path: ["area"],
-        message: "Área permitida somente para o responsável",
+        message: "Área permitida somente para responsável ou gestor de área",
+      });
+    }
+    if (value.role === "gestor_area" && value.unit_id) {
+      context.addIssue({
+        code: "custom",
+        path: ["unit_id"],
+        message: "Gestor de área não deve ser vinculado a uma unidade",
       });
     }
   });

@@ -24,6 +24,7 @@ test("catálogo central associa cada operação protegida à permissão explíci
     TRIAGE: "orders.triage",
     FORWARD: "orders.forward",
     ASSIGN: "orders.assign",
+    ACCEPT_ASSIGNMENT: "orders.attend",
     REASSIGN: "orders.reassign",
     START_SERVICE: "orders.attend",
     ADD_SERVICE_ENTRY: "orders.attend",
@@ -54,6 +55,7 @@ test("Server Actions verificam RBAC antes das RPCs e escritas", async () => {
     startTriage: "TRIAGE",
     forwardOrder: "FORWARD",
     assignOrder: "ASSIGN",
+    acceptAssignment: "ACCEPT_ASSIGNMENT",
     reassignOrder: "REASSIGN",
     startService: "START_SERVICE",
     addServiceEntry: "ADD_SERVICE_ENTRY",
@@ -166,6 +168,10 @@ test("rotas privadas recusam acesso direto por permissão no servidor", async ()
   assert.match(
     await read("src/app/(app)/cadastros/[kind]/page.tsx"),
     /requirePagePermission\(catalogPermission\(kind, "view"\), db\)/,
+  );
+  assert.match(
+    await read("src/app/(app)/cadastros/[kind]/page.tsx"),
+    /if \(!admin\) redirect\("\/sem-acesso"\)/,
   );
   assert.match(
     await read("src/app/anexos/[id]/route.ts"),

@@ -81,7 +81,6 @@ test("interface usa o contrato de operações e não o avanço genérico", () =>
   for (const operation of [
     "reconcile",
     "triage",
-    "forward",
     "assign",
     "reassign",
     "startService",
@@ -96,6 +95,7 @@ test("interface usa o contrato de operações e não o avanço genérico", () =>
       `operação ${operation} não renderizada`,
     );
   assert.ok(!summaryUi.includes("changeStatus"));
+  assert.ok(!workflowUi.includes("Unidade executora"));
   assert.ok(!summaryUi.includes("next_status"));
   assert.ok(serviceUi.includes("addServiceEntry"));
   assert.ok(serviceUi.includes("serviceEntryTypes"));
@@ -106,7 +106,6 @@ test("detalhe apresenta cabeçalho, ciclo e separa atendimento de comunicação"
     "Categoria",
     "Solicitante",
     "Unidade de origem",
-    "Unidade executora",
     "Responsável",
   ]) {
     assert.ok(headerUi.includes(label), `cabeçalho deveria exibir ${label}`);

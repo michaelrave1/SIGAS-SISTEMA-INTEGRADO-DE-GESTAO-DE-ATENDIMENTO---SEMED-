@@ -4,6 +4,7 @@ export { loginWithGoogle, logout } from "./actions/auth";
 export {
   addMessage,
   addServiceEntry,
+  acceptAssignment,
   assignOrder,
   cancelOrder,
   changeStatus,

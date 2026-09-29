@@ -29,6 +29,11 @@ test("menu agrupa cadastros e omite grupos sem itens permitidos", () => {
     ordersOnly.some((item) => item.section === "administration"),
     false,
   );
+  const nonAdministratorCatalogs = visibleNavigationItems(
+    new Set(["logistics.view", "routes.view", "vehicles.view", "drivers.view"]),
+    false,
+  );
+  assert.deepEqual(nonAdministratorCatalogs, []);
 
   const administrator = visibleNavigationItems(
     new Set([

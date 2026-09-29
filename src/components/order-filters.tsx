@@ -109,12 +109,6 @@ export function OrderFilters({
             options={byKind("origin_unit")}
           />
           <FilterSelect
-            label="Unidade executora"
-            name="destination"
-            value={values.destination}
-            options={byKind("destination_unit")}
-          />
-          <FilterSelect
             label="Solicitante"
             name="requester"
             value={values.requester}

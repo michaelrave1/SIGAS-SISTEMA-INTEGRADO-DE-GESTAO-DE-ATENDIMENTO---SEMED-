@@ -22,6 +22,7 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
     tech1: "10000000-0000-4000-a000-000000000003",
     tech2: "10000000-0000-4000-a000-000000000004",
     outsider: "10000000-0000-4000-a000-000000000005",
+    areaManager: "10000000-0000-4000-a000-000000000010",
     unit: "10000000-0000-4000-a000-000000000006",
     category: "10000000-0000-4000-a000-000000000007",
     pending: "10000000-0000-4000-a000-000000000008",
@@ -67,19 +68,20 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
     await db.exec(`
       insert into auth.users(id) values
         ('${ids.admin}'),('${ids.requester}'),('${ids.tech1}'),
-        ('${ids.tech2}'),('${ids.outsider}');
+        ('${ids.tech2}'),('${ids.outsider}'),('${ids.areaManager}');
       insert into os_profiles(id,name) select id,'Teste' from auth.users;
       insert into os_units(id,name) values
         ('${ids.unit}','Unidade solicitante'),
         ('${ids.executionUnit}','Unidade executora');
-      insert into os_catalogs(id,legacy_id,kind,name)
-        values('${ids.category}','CAT-TX','logistics','Categoria');
-      insert into os_memberships(user_id,unit_id,role) values
-        ('${ids.admin}',null,'admin'),
-        ('${ids.requester}','${ids.unit}','solicitante'),
-        ('${ids.tech1}','${ids.executionUnit}','responsavel'),
-        ('${ids.tech2}','${ids.executionUnit}','responsavel'),
-        ('${ids.outsider}','${ids.unit}','solicitante');
+      insert into os_catalogs(id,legacy_id,kind,name,data)
+        values('${ids.category}','CAT-TX','logistics','Categoria','{"area":"DETIC"}');
+      insert into os_memberships(user_id,unit_id,role,area,access_profile_id) values
+        ('${ids.admin}',null,'admin',null,null),
+        ('${ids.requester}','${ids.unit}','solicitante',null,null),
+        ('${ids.tech1}','${ids.executionUnit}','responsavel','DETIC',null),
+        ('${ids.tech2}','${ids.executionUnit}','responsavel','DETIC',null),
+        ('${ids.outsider}','${ids.unit}','solicitante',null,null),
+        ('${ids.areaManager}',null,'gestor','DETIC','a2000000-0000-4000-a000-000000000001');
       insert into os_orders(id,title,status) values
         ('${ids.pending}','Pendente para conciliação','A conferir');
     `);
@@ -158,31 +160,7 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
       "drop trigger reject_test_event on os_order_events; drop function public.reject_test_event();",
     );
 
-    await asUser(ids.admin, `select os_start_triage('${order}',1)`);
-    assert.deepEqual(
-      (
-        await asUser(
-          ids.admin,
-          `select operation from os_order_available_actions('${order}')`,
-        )
-      ).rows,
-      [
-        { operation: "FORWARD" },
-        { operation: "WAIT_INFORMATION" },
-        { operation: "CANCEL" },
-        { operation: "EDIT" },
-      ],
-    );
-    await assert.rejects(
-      asUser(ids.admin, `select os_forward_order('${order}',1,'${ids.executionUnit}')`),
-    );
-    await assert.rejects(
-      asUser(ids.outsider, `select os_forward_order('${order}',2,'${ids.executionUnit}')`),
-    );
-    await asUser(
-      ids.admin,
-      `select os_forward_order('${order}',2,'${ids.executionUnit}')`,
-    );
+    await asUser(ids.areaManager, `select os_start_triage('${order}',1)`);
     assert.deepEqual(
       (
         await asUser(
@@ -197,7 +175,6 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
         { operation: "EDIT" },
       ],
     );
-
     const memberships = await db.query(
       `select user_id,id from os_memberships
        where user_id in ('${ids.tech1}','${ids.tech2}')`,
@@ -209,8 +186,8 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
       (row) => row.user_id === ids.tech2,
     ).id;
     await asUser(
-      ids.admin,
-      `select os_assign_order('${order}',3,'${tech1Membership}')`,
+      ids.areaManager,
+      `select os_assign_order('${order}',2,'${tech1Membership}')`,
     );
     assert.deepEqual(
       (
@@ -220,9 +197,7 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
         )
       ).rows,
       [
-        { operation: "START_SERVICE" },
-        { operation: "WAIT_INFORMATION" },
-        { operation: "CANCEL" },
+        { operation: "ACCEPT_ASSIGNMENT" },
       ],
     );
     assert.deepEqual(
@@ -234,7 +209,6 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
       ).rows,
       [
         { operation: "REASSIGN" },
-        { operation: "START_SERVICE" },
         { operation: "WAIT_INFORMATION" },
         { operation: "CANCEL" },
         { operation: "EDIT" },
@@ -245,14 +219,37 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
         .rows.length,
       1,
     );
+    await asUser(ids.tech1, `select os_accept_assignment('${order}',3)`);
     await asUser(
-      ids.admin,
+      ids.areaManager,
       `select os_reassign_order('${order}',4,'${tech2Membership}','Troca de escala')`,
     );
     await assert.rejects(
       asUser(ids.tech1, `select os_start_service('${order}',5)`),
     );
-    await asUser(ids.tech2, `select os_start_service('${order}',5)`);
+    assert.deepEqual(
+      (await db.query(
+        `select status,responsible_id,responsible_membership_id,version
+         from os_orders where id='${order}'`,
+      )).rows,
+      [{
+        status: "Encaminhada",
+        responsible_id: ids.tech2,
+        responsible_membership_id: tech2Membership,
+        version: 5,
+      }],
+    );
+    assert.deepEqual(
+      (
+        await asUser(
+          ids.tech2,
+          `select operation from os_order_available_actions('${order}')`,
+        )
+      ).rows,
+      [{ operation: "ACCEPT_ASSIGNMENT" }],
+    );
+    await asUser(ids.tech2, `select os_accept_assignment('${order}',5)`);
+    await asUser(ids.tech2, `select os_start_service('${order}',6)`);
     assert.deepEqual(
       (
         await asUser(
@@ -269,18 +266,18 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
     await assert.rejects(
       asUser(
         ids.tech2,
-        `select os_complete_order('${order}',6,'Solução antes do registro')`,
+        `select os_complete_order('${order}',7,'Solução antes do registro')`,
       ),
     );
     assert.equal(
       (await db.query(`select version from os_orders where id='${order}'`)).rows[0]
         .version,
-      6,
+      7,
     );
     await asUser(
       ids.tech2,
       `select os_add_service_entry(
-        '${order}',6,'atendimento','Diagnóstico e correção registrados',now()
+        '${order}',7,'atendimento','Diagnóstico e correção registrados',now()
       )`,
     );
     assert.deepEqual(
@@ -300,7 +297,7 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
     await asUser(
       ids.tech2,
       `select os_wait_for_information(
-        '${order}',7,'material','Aguardando material necessário'
+        '${order}',8,'material','Aguardando material necessário'
       )`,
     );
     assert.deepEqual(
@@ -324,17 +321,17 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
           status: "Aguardando informação",
           resume_status: "Em atendimento",
           waiting_reason: "material",
-          version: 8,
+          version: 9,
         },
       ],
     );
     await assert.rejects(
-      asUser(ids.tech2, `select os_resume_service('${order}',7)`),
+      asUser(ids.tech2, `select os_resume_service('${order}',8)`),
     );
-    await asUser(ids.tech2, `select os_resume_service('${order}',8)`);
+    await asUser(ids.tech2, `select os_resume_service('${order}',9)`);
     await asUser(
       ids.tech2,
-      `select os_complete_order('${order}',9,'Equipamento normalizado')`,
+      `select os_complete_order('${order}',10,'Equipamento normalizado')`,
     );
     assert.deepEqual(
       (
@@ -348,35 +345,35 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
     await assert.rejects(
       asUser(
         ids.outsider,
-        `select os_reopen_order('${order}',10,'Nova ocorrência')`,
+        `select os_reopen_order('${order}',11,'Nova ocorrência')`,
       ),
     );
     await asUser(
       ids.admin,
-      `select os_reopen_order('${order}',10,'Nova ocorrência')`,
+      `select os_reopen_order('${order}',11,'Nova ocorrência')`,
     );
     await assert.rejects(
       asUser(
         ids.admin,
         `select os_edit_order_controlled(
-          '${order}',11,'Fluxo transacional','Alta','','{}'
+          '${order}',12,'Fluxo transacional','Alta','','{}'
         )`,
       ),
     );
     await asUser(
       ids.admin,
       `select os_edit_order_controlled(
-        '${order}',11,'Fluxo transacional revisado','Alta','Impacto confirmado','{}'
+        '${order}',12,'Fluxo transacional revisado','Alta','Impacto confirmado','{}'
       )`,
     );
     await asUser(
       ids.admin,
-      `select os_cancel_order('${order}',12,'Solicitação substituída')`,
+      `select os_cancel_order('${order}',13,'Solicitação substituída')`,
     );
     await assert.rejects(
       asUser(
         ids.admin,
-        `select os_cancel_order('${order}',13,'Cancelamento repetido')`,
+        `select os_cancel_order('${order}',14,'Cancelamento repetido')`,
       ),
     );
 
@@ -386,7 +383,7 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
           `select status,version,legacy_id from os_orders where id='${order}'`,
         )
       ).rows,
-      [{ status: "Cancelada", version: 13, legacy_id: null }],
+      [{ status: "Cancelada", version: 14, legacy_id: null }],
     );
     assert.equal(
       Number(
@@ -397,7 +394,7 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
           )
         ).rows[0].count,
       ),
-      13,
+      14,
     );
     await assert.rejects(
       db.query(

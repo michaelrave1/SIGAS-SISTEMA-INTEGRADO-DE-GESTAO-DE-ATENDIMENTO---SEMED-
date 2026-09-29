@@ -163,6 +163,30 @@ export async function assignOrder(form: FormData) {
   refreshOrder(id);
 }
 
+export async function acceptAssignment(form: FormData) {
+  const input = orderVersionedSchema.safeParse(Object.fromEntries(form));
+  if (!input.success) return invalidOrderAction(form, "ACCEPT_ASSIGNMENT");
+  const { db } = await session();
+  await requireActionPermission(
+    db,
+    orderActionPermissions.ACCEPT_ASSIGNMENT,
+    `/ordens/${input.data.id}`,
+    "ACCEPT_ASSIGNMENT",
+  );
+  const { id, version } = input.data;
+  const { error } = await db.rpc("os_accept_assignment", {
+    target: id,
+    expected_version: version,
+  });
+  if (error)
+    return orderActionFailed(
+      `/ordens/${id}`,
+      error,
+      "ACCEPT_ASSIGNMENT",
+    );
+  refreshOrder(id);
+}
+
 export async function reassignOrder(form: FormData) {
   const input = orderReassignmentSchema.safeParse(Object.fromEntries(form));
   if (!input.success) return invalidOrderAction(form, "REASSIGN");

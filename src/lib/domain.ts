@@ -57,19 +57,22 @@ export const justifyOrderSchema = orderJustificationSchema;
 export const roleNames = {
   administrator: "admin",
   manager: "gestor",
+  areaManager: "gestor_area",
   requester: "solicitante",
   responsible: "responsavel",
 } as const;
 export const roles = [
   roleNames.administrator,
   roleNames.manager,
+  roleNames.areaManager,
   roleNames.requester,
   roleNames.responsible,
 ] as const;
 export type Role = (typeof roles)[number];
 export const roleLabels: Record<Role, string> = {
   admin: "Administrador",
-  gestor: "Gestor",
+  gestor: "Gestor da Unidade",
+  gestor_area: "Gestor de Área",
   solicitante: "Solicitante",
   responsavel: "Responsável",
 };

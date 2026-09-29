@@ -485,16 +485,18 @@ test("RLS do novo fluxo separa origem, execução, autoria e dados internos", as
       true,
     );
     assert.ok(
-      (await asUser(
+      !(await asUser(
         users.unassigned,
         `select operation from os_order_available_actions('${order}')`,
       )).rows.some(({ operation }) => operation === "ADD_SERVICE_ENTRY"),
     );
-    await asUser(
-      users.unassigned,
-      `select os_add_service_entry(
-        '${order}',6,'atendimento','Atuação coletiva da área DETIC',now()
-      )`,
+    await assert.rejects(
+      asUser(
+        users.unassigned,
+        `select os_add_service_entry(
+          '${order}',6,'atendimento','Atuação sem atribuição individual',now()
+        )`,
+      ),
     );
 
     await assert.rejects(asAnon("select id from os_orders"));

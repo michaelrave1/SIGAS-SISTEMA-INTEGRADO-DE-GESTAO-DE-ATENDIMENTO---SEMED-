@@ -23,7 +23,6 @@ test("interface oferece todos os filtros e os persiste como parâmetros GET", ()
     "priority",
     "category",
     "origin",
-    "destination",
     "requester",
     "responsible",
     "opened_from",
@@ -36,6 +35,7 @@ test("interface oferece todos os filtros e os persiste como parâmetros GET", ()
     assert.ok(filters.includes(`name="${name}"`), `filtro ${name} ausente`);
   }
   assert.match(filters, /method="get"/i);
+  assert.ok(!filters.includes('name="destination"'));
   assert.ok(page.includes("orderFilterUrlParams"));
 });
 

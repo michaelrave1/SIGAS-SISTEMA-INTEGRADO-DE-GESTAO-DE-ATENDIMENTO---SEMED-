@@ -37,7 +37,7 @@ export function ProfessionalRoleFields({
             ))}
         </select>
       </label>
-      {role === roleNames.responsible && (
+      {(role === roleNames.responsible || role === roleNames.areaManager) && (
         <label>
           Área
           <select name="area" defaultValue={initialArea} required>

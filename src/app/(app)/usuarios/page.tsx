@@ -116,7 +116,7 @@ export default async function Users({ searchParams }: {
         />
         <label>Unidade
           <select name="unit_id" defaultValue={item?.unit_id ?? ""}>
-            <option value="">Secretaria / rede (admin ou gestor)</option>
+            <option value="">Secretaria / rede (admin ou gestor de área)</option>
             {units.data?.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
           </select>
         </label>
