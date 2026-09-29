@@ -236,9 +236,6 @@ begin
   if target_role not in ('responsavel','gestor_area') and normalized_area is not null then
     raise exception 'Área permitida somente para responsável ou gestor de área';
   end if;
-  if target_role='gestor_area' and target_unit is not null then
-    raise exception 'Gestor de área não deve ser vinculado a uma unidade';
-  end if;
   if normalized_area is not null and not exists(
     select 1 from public.os_catalogs c
     where c.kind='logistics' and c.active and btrim(c.data->>'area')=normalized_area
@@ -246,7 +243,8 @@ begin
 
   saved_membership := os_private.os_save_professional_membership(
     target_membership,target_professional,professional_email,professional_name,
-    professional_registration,professional_position,target_unit,
+    professional_registration,professional_position,
+    case when target_role='gestor_area' then null else target_unit end,
     case when target_role='gestor_area' then 'gestor' else target_role end,
     professional_active,membership_active
   );

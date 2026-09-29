@@ -70,13 +70,6 @@ export const professionalMembershipSchema = z
         message: "Área permitida somente para responsável ou gestor de área",
       });
     }
-    if (value.role === "gestor_area" && value.unit_id) {
-      context.addIssue({
-        code: "custom",
-        path: ["unit_id"],
-        message: "Gestor de área não deve ser vinculado a uma unidade",
-      });
-    }
   });
 
 export type ProfessionalMembershipInput = z.infer<

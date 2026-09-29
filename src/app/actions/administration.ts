@@ -206,7 +206,10 @@ export async function saveProfessionalMembership(form: FormData) {
     professional_name: input.data.name,
     professional_registration: input.data.registration,
     professional_position: input.data.position,
-    target_unit: input.data.unit_id || null,
+    target_unit:
+      input.data.role === roleNames.areaManager
+        ? null
+        : input.data.unit_id || null,
     target_role: input.data.role,
     target_area: input.data.area || null,
     professional_active: form.get("professional_active") === "on",
