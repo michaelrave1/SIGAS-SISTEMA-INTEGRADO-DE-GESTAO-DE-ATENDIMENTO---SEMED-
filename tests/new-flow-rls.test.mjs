@@ -455,6 +455,41 @@ test("RLS do novo fluxo separa origem, execução, autoria e dados internos", as
     await assert.rejects(
       asUser(users.admin, `delete from os_order_events where order_id='${order}'`),
     );
+
+    await db.exec(`
+      update os_catalogs set data='{"area":"DETIC"}'::jsonb where id='${category}';
+      update os_memberships set area='DETIC'
+      where user_id in ('${users.assigned}','${users.unassigned}')
+        and role='responsavel';
+    `);
+    assert.equal(
+      Number((await db.query(
+        `select count(*)::int total from os_order_area_assignments
+         where order_id='${order}'`,
+      )).rows[0].total),
+      2,
+    );
+    assert.equal(await countAs(users.unassigned, "os_orders", `id='${order}'`), 1);
+    assert.equal(
+      (await asUser(
+        users.unassigned,
+        `select os_order_can_collaborate('${order}') as allowed`,
+      )).rows[0].allowed,
+      true,
+    );
+    assert.ok(
+      (await asUser(
+        users.unassigned,
+        `select operation from os_order_available_actions('${order}')`,
+      )).rows.some(({ operation }) => operation === "ADD_SERVICE_ENTRY"),
+    );
+    await asUser(
+      users.unassigned,
+      `select os_add_service_entry(
+        '${order}',6,'atendimento','Atuação coletiva da área DETIC',now()
+      )`,
+    );
+
     await assert.rejects(asAnon("select id from os_orders"));
     await assert.rejects(asAnon("select id from os_order_events"));
     await assert.rejects(asAnon("select id from os_order_service_entries"));
