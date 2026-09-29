@@ -19,6 +19,7 @@ export const professionalMembershipSchema = z
     position: z.string().trim().max(160),
     role: z.enum(["admin", "gestor", "solicitante", "responsavel"]),
     unit_id: z.union([z.literal(""), z.uuid()]),
+    area: z.string().trim().max(500).default(""),
   })
   .superRefine((value, context) => {
     if (!value.professional_id && !value.email) {
@@ -43,6 +44,20 @@ export const professionalMembershipSchema = z
         code: "custom",
         path: ["unit_id"],
         message: "Administrador deve possuir escopo global",
+      });
+    }
+    if (value.role === "responsavel" && !value.area) {
+      context.addIssue({
+        code: "custom",
+        path: ["area"],
+        message: "Área obrigatória para o responsável",
+      });
+    }
+    if (value.role !== "responsavel" && value.area) {
+      context.addIssue({
+        code: "custom",
+        path: ["area"],
+        message: "Área permitida somente para o responsável",
       });
     }
   });

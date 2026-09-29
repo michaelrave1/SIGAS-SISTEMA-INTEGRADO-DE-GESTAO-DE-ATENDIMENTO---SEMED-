@@ -472,6 +472,7 @@ export type Database = {
           identity_linked: boolean;
           relink_pending: boolean;
           unit_id: string | null;
+          area: string | null;
           role: string | null;
           membership_active: boolean | null;
           total_count: number;
@@ -487,6 +488,7 @@ export type Database = {
           professional_position: string;
           target_unit: string | null;
           target_role: string;
+          target_area: string | null;
           professional_active: boolean;
           membership_active: boolean;
         };

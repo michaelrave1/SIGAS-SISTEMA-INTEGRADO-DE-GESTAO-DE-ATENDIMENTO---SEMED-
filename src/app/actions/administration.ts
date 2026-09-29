@@ -157,6 +157,7 @@ export async function saveProfessionalMembership(form: FormData) {
     ...Object.fromEntries(form),
     id: formText(form, "id"),
     professional_id: formText(form, "professional_id"),
+    area: formText(form, "area"),
   });
   if (!input.success) return actionFailed("/usuarios", "validation", "save_professional");
   if (
@@ -204,6 +205,7 @@ export async function saveProfessionalMembership(form: FormData) {
     professional_position: input.data.position,
     target_unit: input.data.unit_id || null,
     target_role: input.data.role,
+    target_area: input.data.area || null,
     professional_active: form.get("professional_active") === "on",
     membership_active: form.get("membership_active") === "on",
   });

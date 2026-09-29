@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { session } from "@/lib/session";
-import { roleNames, roles } from "@/lib/domain";
+import { roleNames, type Role } from "@/lib/domain";
 import { Heading, Notice, Pagination } from "@/components/ui";
 import { pageNumber } from "@/lib/pagination";
 import { fieldLimits, queryLimits } from "@/lib/application-config";
@@ -13,6 +13,7 @@ import {
   deactivateProfessionalMembership,
 } from "@/app/actions";
 import { ActionSubmitButton } from "@/components/action-submit-button";
+import { ProfessionalRoleFields } from "@/components/professional-role-fields";
 import { getUserPermissions, requirePagePermission } from "@/lib/authorization";
 import { permissionSetHas } from "@/lib/authorization-core";
 import {
@@ -46,14 +47,20 @@ export default async function Users({ searchParams }: {
   const canSelect = canUpdate || canDelete || canManage;
   const p = await searchParams;
   const page = pageNumber(p.page);
-  const [units, memberships] = await Promise.all([
+  const [units, memberships, categoryAreas] = await Promise.all([
     db.from("os_units").select("id,name").order("name").limit(queryLimits.lookupRows),
     db.rpc("os_professional_memberships", {
       page_size: queryLimits.pageSize,
       page_offset: (page - 1) * queryLimits.pageSize,
     }),
+    db.from("os_catalogs").select("data").eq("kind", "logistics").eq("active", true)
+      .limit(queryLimits.lookupRows),
   ]);
-  ensureQueriesSucceeded([units, memberships], "Falha ao consultar profissionais");
+  ensureQueriesSucceeded([units, memberships, categoryAreas], "Falha ao consultar profissionais");
+  const areas = [...new Set((categoryAreas.data ?? [])
+    .map((category) => category.data.area?.trim())
+    .filter((area): area is string => Boolean(area)))]
+    .sort((left, right) => left.localeCompare(right, "pt-BR"));
   const rows = memberships.data ?? [];
   const item = canSelect
     ? rows.find((membership) => membership.membership_id === p.edit)
@@ -66,7 +73,7 @@ export default async function Users({ searchParams }: {
     <Notice error={p.erro} />
     <section className="card table-wrap">
       <table>
-        <thead><tr><th>Profissional</th><th>Conta institucional</th><th>Unidade</th><th>Papel</th><th>Situação</th><th>Ação</th></tr></thead>
+        <thead><tr><th>Profissional</th><th>Conta institucional</th><th>Unidade</th><th>Área</th><th>Papel</th><th>Situação</th><th>Ação</th></tr></thead>
         <tbody>{rows.map((membership) => <tr key={membership.membership_id ?? membership.professional_id}>
           <td>{membership.professional_name}</td>
           <td>
@@ -76,6 +83,7 @@ export default async function Users({ searchParams }: {
               : membership.relink_pending ? "Nova vinculação autorizada" : "Aguardando primeiro acesso"}</small>
           </td>
           <td>{units.data?.find((unit) => unit.id === membership.unit_id)?.name ?? "Secretaria / rede"}</td>
+          <td>{membership.area ?? "—"}</td>
           <td>{membership.role ?? "Sem vínculo"}</td>
           <td>{membership.professional_active && membership.membership_active ? "Ativo" : "Inativo"}</td>
           <td>{canSelect && membership.membership_id && <Link href={`/usuarios?page=${page}&edit=${membership.membership_id}`}>Administrar</Link>}</td>
@@ -100,15 +108,12 @@ export default async function Users({ searchParams }: {
         </label>
         <label>Matrícula<input name="registration" maxLength={80} defaultValue={item?.registration ?? ""} /></label>
         <label>Cargo / função<input name="position" maxLength={160} defaultValue={item?.job_title ?? ""} /></label>
-        <label>Papel
-          <select name="role" defaultValue={item?.role ?? roleNames.requester}>
-            {roles
-              .filter((role) =>
-                canManage || role !== roleNames.administrator,
-              )
-              .map((role) => <option key={role}>{role}</option>)}
-          </select>
-        </label>
+        <ProfessionalRoleFields
+          initialRole={(item?.role as Role | null) ?? roleNames.requester}
+          initialArea={item?.area ?? ""}
+          areas={areas}
+          canManage={canManage}
+        />
         <label>Unidade
           <select name="unit_id" defaultValue={item?.unit_id ?? ""}>
             <option value="">Secretaria / rede (admin ou gestor)</option>
