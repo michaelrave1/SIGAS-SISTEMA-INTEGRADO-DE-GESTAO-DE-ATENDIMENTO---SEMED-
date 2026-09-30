@@ -11,7 +11,7 @@ const migrations = await Promise.all(
         file.endsWith(".sql") && !file.includes("202609290005") && !file.endsWith("_performance_indexes.sql"),
     )
     .sort()
-    .map((file) => fs.readFile(new URL(file, migrationsDirectory), "utf8")),
+    .map((file) => fs.readFile(file.startsWith("202609290001") ? new URL("./fixtures/production-202609290001.sql", import.meta.url) : new URL(file, migrationsDirectory), "utf8")),
 );
 
 test("correção idempotente do gestor de área no schema divergente", async () => {
@@ -81,34 +81,31 @@ test("correção idempotente do gestor de área no schema divergente", async () 
         ('${ids.tech1}','${ids.executionUnit}','responsavel','DETIC',null),
         ('${ids.tech2}','${ids.executionUnit}','responsavel','DETIC',null),
         ('${ids.outsider}','${ids.unit}','solicitante',null,null),
-        ('${ids.areaManager}',null,'gestor','DETIC','a2000000-0000-4000-a000-000000000001');
+        ('${ids.areaManager}','${ids.unit}','gestor',null,null);
       insert into os_orders(id,title,status) values
         ('${ids.pending}','Pendente para conciliação','A conferir');
     `);
 
     const migration = await fs.readFile(new URL("../supabase/migrations/202609290005_reconcile_area_manager.sql", import.meta.url), "utf8");
-    await db.exec(`
-      update os_memberships set access_profile_id=(select id from os_access_profiles where key='manager'),
-        unit_id='${ids.unit}',area=null where user_id='${ids.areaManager}';
-      alter table os_access_profiles disable trigger user;
-      delete from os_access_profile_permissions where access_profile_id=(select id from os_access_profiles where key='area_manager');
-      delete from os_access_profiles where key='area_manager';
-      alter table os_access_profiles enable trigger user;
-      drop index os_access_profiles_system_key;
-      create unique index os_access_profiles_system_legacy_role on os_access_profiles(legacy_role) where is_system;
-      drop function os_private.is_area_manager(public.os_orders);
-    `);
-    const old = await fs.readFile(new URL("../supabase/migrations/202609250004_rbac_profiles_permissions.sql", import.meta.url), "utf8");
-    const start = old.indexOf("create function os_private.sync_membership_access_profile()");
-    await db.exec(old.slice(start,old.indexOf("create trigger memberships_sync_access_profile",start)).replace("create function","create or replace function"));
+    assert.equal((await db.query("select to_regclass('public.os_order_area_assignments') name")).rows[0].name, null);
+    // A versão anterior não criava a tabela: reproduz 42P01 e verifica rollback.
+    const broken = migration.replace(/create table if not exists public.os_order_area_assignments[\s\S]*?on public.os_order_area_assignments\(membership_id,order_id\);/, "");
+    await assert.rejects(db.exec(broken), error => error.code === "42P01");
+    await db.exec("rollback");
+    assert.equal((await db.query("select count(*)::int n from os_access_profiles where key='area_manager'")).rows[0].n, 0);
     const member = (await db.query(`select * from os_memberships where user_id='${ids.areaManager}'`)).rows[0];
     const save = (role,area,user=ids.admin) => asUser(user,`select os_save_professional_membership(
       '${member.id}','${member.professional_id}','','Teste','','','${ids.unit}',
       '${role}',${area === null ? 'null' : "'"+area+"'"},true,true)`);
     await assert.rejects(save("gestor_area","DETIC"), /Perfil de acesso inválido ou inativo/);
     await save("gestor",null);
+    const existingOrder = (await asUser(ids.requester,`select os_open_order(
+      'OS anterior à correção','${ids.unit}','${ids.category}','Normal','{}',null,null,null) id`)).rows[0].id;
     const before = (await db.query(`select * from os_memberships where id='${member.id}'`)).rows;
     await db.exec(migration);
+    assert.equal((await db.query(`select count(*)::int n from os_order_area_assignments where order_id='${existingOrder}'`)).rows[0].n,2);
+    assert.equal((await db.query("select relrowsecurity from pg_class where oid='public.os_order_area_assignments'::regclass")).rows[0].relrowsecurity,true);
+    await assert.rejects(asUser(ids.requester,"select * from os_order_area_assignments"), /permission denied/);
     await db.exec(`insert into os_access_profile_permissions(access_profile_id,permission_id)
       select p.id,q.id from os_access_profiles p cross join os_permissions q
       where p.key='area_manager' and q.key='professionals.manage'`);
@@ -145,6 +142,11 @@ test("correção idempotente do gestor de área no schema divergente", async () 
     await save("gestor",null);
     assert.equal((await db.query(`select p.key from os_memberships m join os_access_profiles p on p.id=m.access_profile_id where m.id='${member.id}'`)).rows[0].key,"manager");
     assert.equal((await asUser(ids.areaManager,`select id from os_orders where id='${other}'`)).rows.length,1);
+    await db.exec(`update os_memberships set area='PATRIMÔNIO' where id='${tech}'`);
+    assert.equal((await db.query(`select count(*)::int n from os_order_area_assignments where membership_id='${tech}' and order_id='${own}'`)).rows[0].n,0);
+    assert.equal((await db.query(`select count(*)::int n from os_order_area_assignments where membership_id='${tech}' and order_id='${other}'`)).rows[0].n,1);
+    await db.exec(`update os_catalogs set data='{"area":"DETIC"}' where id='30000000-0000-4000-a000-000000000001'`);
+    assert.equal((await db.query(`select count(*)::int n from os_order_area_assignments where membership_id='${tech}' and order_id='${other}'`)).rows[0].n,0);
   } finally { await db.close(); }
 });
 

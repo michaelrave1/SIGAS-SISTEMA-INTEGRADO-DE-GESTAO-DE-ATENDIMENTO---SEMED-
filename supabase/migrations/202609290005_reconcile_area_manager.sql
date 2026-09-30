@@ -1,6 +1,17 @@
 -- Reconcilia o schema real: 202609290001 foi registrada com outro conteúdo.
 -- Não modifica vínculos existentes. Reexecução converge para o mesmo estado.
 begin;
+
+-- Estrutura já prevista em 202609290001 local, ausente na versão remota.
+create table if not exists public.os_order_area_assignments (
+  order_id uuid not null references public.os_orders(id) on delete cascade,
+  membership_id uuid not null references public.os_memberships(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key(order_id,membership_id)
+);
+create index if not exists os_order_area_assignments_membership
+  on public.os_order_area_assignments(membership_id,order_id);
+
 drop index if exists public.os_access_profiles_system_legacy_role;
 create unique index if not exists os_access_profiles_system_key
   on public.os_access_profiles(key) where is_system;
@@ -672,6 +683,32 @@ begin
   return saved_membership;
 end;
 $$;
+
+drop trigger if exists orders_sync_area_assignments on public.os_orders;
+create trigger orders_sync_area_assignments
+  after insert or update of category_id on public.os_orders
+  for each row execute function os_private.sync_order_area_assignments();
+drop trigger if exists memberships_sync_area_assignments on public.os_memberships;
+create trigger memberships_sync_area_assignments
+  after insert or update of area,role,active on public.os_memberships
+  for each row execute function os_private.sync_membership_area_assignments();
+drop trigger if exists catalogs_sync_area_assignments on public.os_catalogs;
+create trigger catalogs_sync_area_assignments
+  after update of data,kind on public.os_catalogs
+  for each row execute function os_private.sync_catalog_area_assignments();
+
+insert into public.os_order_area_assignments(order_id,membership_id)
+select o.id,m.id
+from public.os_orders o
+join public.os_catalogs c on c.id=o.category_id and c.kind='logistics'
+join public.os_memberships m on m.active and m.role='responsavel'
+  and m.area is not null and m.area=btrim(c.data->>'area')
+on conflict do nothing;
+
+
+-- Tabela interna: sem acesso direto de clientes; helpers SECURITY DEFINER.
+alter table public.os_order_area_assignments enable row level security;
+revoke all on public.os_order_area_assignments from public,anon,authenticated;
 
 revoke all on function public.os_professional_memberships(integer,integer) from public,anon;
 revoke all on function public.os_order_responsible_options(uuid) from public,anon;
