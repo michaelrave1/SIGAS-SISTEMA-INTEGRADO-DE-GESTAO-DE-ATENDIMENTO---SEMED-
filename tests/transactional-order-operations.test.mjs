@@ -311,7 +311,7 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
     await asUser(
       ids.tech2,
       `select os_add_service_entry(
-        '${order}',7,'atendimento','Diagnóstico e correção registrados',now()
+        '${order}',7,'diagnóstico','Diagnóstico e correção registrados',now()
       )`,
     );
     assert.deepEqual(

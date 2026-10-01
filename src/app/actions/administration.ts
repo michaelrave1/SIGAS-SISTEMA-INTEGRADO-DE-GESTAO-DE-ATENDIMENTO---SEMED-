@@ -46,9 +46,13 @@ export async function saveCatalog(form: FormData) {
     "save_catalog",
   );
   const name = z.string().trim().min(1).max(fieldLimits.catalogName).parse(formText(form, "name"));
-  const data: CatalogData = {};
-  for (const [key] of catalogFields[catalogKind].fields)
-    data[key] = z.string().trim().max(fieldLimits.catalogValue).parse(formText(form, key));
+  const current = id ? await db.from("os_catalogs").select("data").eq("id", id).eq("kind", catalogKind).single() : null;
+  if (current?.error) return actionFailed(`/cadastros/${catalogKind}`);
+  const data: CatalogData = { ...current?.data?.data };
+  for (const [key] of catalogFields[catalogKind].fields) {
+    const value = z.string().trim().max(fieldLimits.catalogValue).parse(formText(form, key));
+    if (value || Object.hasOwn(data, key)) data[key] = value;
+  }
   if (catalogKind === "logistics" && data.area)
     data.area = normalizeAreaName(data.area);
   if (data.link) {
@@ -62,7 +66,10 @@ export async function saveCatalog(form: FormData) {
     catalog_data: data,
     catalog_active: form.get("active") === "on",
   });
-  if (error) return actionFailed(`/cadastros/${catalogKind}`);
+  if (error) {
+    if (error.code === "23503") redirect(`/cadastros/${catalogKind}?erro=referenced`);
+    return actionFailed(`/cadastros/${catalogKind}`, error.code === "23514" ? "validation" : "unexpected");
+  }
   revalidatePath(`/cadastros/${catalogKind}`);
   redirect(`/cadastros/${catalogKind}`);
 }

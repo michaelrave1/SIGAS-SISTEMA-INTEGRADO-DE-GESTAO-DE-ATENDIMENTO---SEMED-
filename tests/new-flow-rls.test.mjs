@@ -93,8 +93,8 @@ test("RLS do novo fluxo separa origem, execução, autoria e dados internos", as
       insert into os_units(id,name) values
         ('${units.origin}','Origem'),('${units.destination}','Executora'),
         ('${units.other}','Outra unidade');
-      insert into os_catalogs(id,legacy_id,kind,name)
-        values('${category}','CAT-RLS-FLOW','logistics','Categoria');
+      insert into os_catalogs(id,legacy_id,kind,name,data)
+        values('${category}','CAT-RLS-FLOW','logistics','Categoria','{"area":"DETIC"}');
       insert into os_memberships(user_id,unit_id,role) values
         ('${users.admin}',null,'admin'),
         ('${users.requester}','${units.origin}','solicitante'),
@@ -142,7 +142,7 @@ test("RLS do novo fluxo separa origem, execução, autoria e dados internos", as
       await asUser(
         users.assigned,
         `select os_add_service_entry(
-          '${order}',5,'atendimento','Diagnóstico técnico interno',now()
+          '${order}',5,'diagnóstico','Diagnóstico técnico interno',now()
         ) as id`,
       )
     ).rows[0].id;
@@ -414,7 +414,7 @@ test("RLS do novo fluxo separa origem, execução, autoria e dados internos", as
       asUser(
         users.unassigned,
         `select os_add_service_entry(
-          '${order}',6,'atendimento','Tentativa sem atribuição',now()
+          '${order}',6,'diagnóstico','Tentativa sem atribuição',now()
         )`,
       ),
     );
@@ -432,7 +432,7 @@ test("RLS do novo fluxo separa origem, execução, autoria e dados internos", as
           order_id,author_id,author_membership_id,entry_type,description,serviced_at
         ) values(
           '${order}','${users.admin}','${assignedMembership}',
-          'atendimento','Autoria falsificada',now()
+          'diagnóstico','Autoria falsificada',now()
         )`,
       ),
     );
@@ -494,7 +494,7 @@ test("RLS do novo fluxo separa origem, execução, autoria e dados internos", as
       asUser(
         users.unassigned,
         `select os_add_service_entry(
-          '${order}',6,'atendimento','Atuação sem atribuição individual',now()
+          '${order}',6,'diagnóstico','Atuação sem atribuição individual',now()
         )`,
       ),
     );

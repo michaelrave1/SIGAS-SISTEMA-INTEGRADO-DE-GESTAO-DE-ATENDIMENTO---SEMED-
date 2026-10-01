@@ -1,9 +1,6 @@
 import { addServiceEntry } from "@/app/actions";
 import { date } from "@/components/ui";
-import {
-  serviceEntryTypes,
-  workflowLimits,
-} from "@/lib/domain";
+import { workflowLimits } from "@/lib/domain";
 import type { OrderServiceEntryView } from "./types";
 
 export function OrderService({
@@ -11,11 +8,13 @@ export function OrderService({
   version,
   entries,
   canAdd,
+  serviceEntryTypes,
 }: {
   id: string;
   version: number;
   entries: OrderServiceEntryView[];
   canAdd: boolean;
+  serviceEntryTypes: { key: string; name: string }[];
 }) {
   if (!canAdd && !entries.length) return null;
 
@@ -42,8 +41,8 @@ export function OrderService({
               <select name="entry_type" required defaultValue="">
                 <option value="">Selecione</option>
                 {serviceEntryTypes.map((entryType) => (
-                  <option key={entryType} value={entryType}>
-                    {entryType.charAt(0).toUpperCase() + entryType.slice(1)}
+                  <option key={entryType.key} value={entryType.key}>
+                    {entryType.name}
                   </option>
                 ))}
               </select>
@@ -71,9 +70,7 @@ export function OrderService({
       <div className="timeline service-timeline">
         {entries.map((entry) => (
           <article key={entry.id}>
-            <strong>
-              {entry.entry_type.charAt(0).toUpperCase() + entry.entry_type.slice(1)}
-            </strong>
+            <strong>{entry.entry_type_name ?? entry.entry_type}</strong>
             <small>Atendimento em {date(entry.serviced_at)}</small>
             <p>{entry.description}</p>
           </article>

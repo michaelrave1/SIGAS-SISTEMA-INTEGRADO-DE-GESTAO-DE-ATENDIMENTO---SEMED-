@@ -34,6 +34,7 @@ export const permissionKeys = [
   "professionals.delete",
   "professionals.manage",
   "audit.view",
+  "system_catalogs.manage",
 ] as const;
 
 export type PermissionKey = (typeof permissionKeys)[number];

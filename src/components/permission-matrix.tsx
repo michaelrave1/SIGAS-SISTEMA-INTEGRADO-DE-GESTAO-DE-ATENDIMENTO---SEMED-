@@ -22,6 +22,7 @@ const moduleLabels: Record<string, string> = {
   drivers: "Motoristas",
   professionals: "Profissionais",
   audit: "Auditoria",
+  system_catalogs: "Cadastros do Sistema",
 };
 
 const actionLabels: Record<string, string> = {
@@ -142,12 +143,7 @@ export function PermissionMatrix({
     >
       <input type="hidden" name="id" value={profileId} />
       {[...selected].map((key) => (
-        <input
-          key={key}
-          type="hidden"
-          name="permission_keys"
-          value={key}
-        />
+        <input key={key} type="hidden" name="permission_keys" value={key} />
       ))}
 
       <div className="permission-matrix">

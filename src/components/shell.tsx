@@ -35,6 +35,7 @@ const icons = {
   professionals: Settings,
   audit: ShieldCheck,
   access_profiles: KeyRound,
+  system_catalogs: Settings,
 } as const;
 
 export function Shell({

@@ -84,16 +84,6 @@ export const orderWaitReasons = [
 ] as const;
 export type OrderWaitReason = (typeof orderWaitReasons)[number];
 
-export const serviceEntryTypeNames = {
-  diagnosis: "diagnóstico",
-  action: "ação realizada",
-  visit: "visita",
-  material: "material",
-  technicalNote: "observação técnica",
-} as const;
-export const serviceEntryTypes = Object.values(serviceEntryTypeNames);
-export type ServiceEntryType = (typeof serviceEntryTypes)[number];
-
 export const orderResumeStatuses = [
   canonicalOrderStatusNames.triage,
   canonicalOrderStatusNames.forwarded,
@@ -270,13 +260,11 @@ export const allowedOrderTransitions = [
     canonicalOrderStatusNames.forwarded,
     canonicalOrderStatusNames.assigned,
     canonicalOrderStatusNames.inService,
-  ].map(
-    (to): OrderTransition => ({
-      from: canonicalOrderStatusNames.waitingInformation,
-      to,
-      operation: orderOperationNames.resume,
-    }),
-  ),
+  ].map((to): OrderTransition => ({
+    from: canonicalOrderStatusNames.waitingInformation,
+    to,
+    operation: orderOperationNames.resume,
+  })),
   {
     from: canonicalOrderStatusNames.waitingInformation,
     to: canonicalOrderStatusNames.canceled,
@@ -385,15 +373,17 @@ export const orderReassignmentSchema = orderAssignmentSchema.extend({
     .max(workflowLimits.justificationMax),
 });
 export const orderServiceEntrySchema = orderVersionedSchema.extend({
-  entry_type: z.enum(serviceEntryTypes),
+  entry_type: z.string().trim().min(1).max(80),
   description: z
     .string()
     .trim()
     .min(workflowLimits.solutionMin)
     .max(workflowLimits.solutionMax),
-  serviced_at: z.string().refine((value) => Number.isFinite(Date.parse(value)), {
-    message: "Data de atendimento inválida",
-  }),
+  serviced_at: z
+    .string()
+    .refine((value) => Number.isFinite(Date.parse(value)), {
+      message: "Data de atendimento inválida",
+    }),
 });
 export const orderTransitionRequestSchema = z
   .object({
@@ -490,12 +480,13 @@ export function buildOrderCycle(
   const waiting =
     canonicalStatus === canonicalOrderStatusNames.waitingInformation;
   const effectiveStatus = waiting
-    ? resumeStatus ?? canonicalOrderStatusNames.inService
+    ? (resumeStatus ?? canonicalOrderStatusNames.inService)
     : canonicalStatus;
   const completed = canonicalStatus === canonicalOrderStatusNames.completed;
   const canceled = canonicalStatus === canonicalOrderStatusNames.canceled;
   const pendingReview =
-    canonicalStatus === canonicalOrderStatusNames.pendingReview || !canonicalStatus;
+    canonicalStatus === canonicalOrderStatusNames.pendingReview ||
+    !canonicalStatus;
   const currentIndex = completed
     ? orderCycleStages.length - 1
     : (stageByStatus.get(effectiveStatus ?? "") ?? -1);

@@ -145,8 +145,8 @@ test("correção idempotente do gestor de área no schema divergente", async () 
     await db.exec(`update os_memberships set area='PATRIMÔNIO' where id='${tech}'`);
     assert.equal((await db.query(`select count(*)::int n from os_order_area_assignments where membership_id='${tech}' and order_id='${own}'`)).rows[0].n,0);
     assert.equal((await db.query(`select count(*)::int n from os_order_area_assignments where membership_id='${tech}' and order_id='${other}'`)).rows[0].n,1);
-    await db.exec(`update os_catalogs set data='{"area":"DETIC"}' where id='30000000-0000-4000-a000-000000000001'`);
-    assert.equal((await db.query(`select count(*)::int n from os_order_area_assignments where membership_id='${tech}' and order_id='${other}'`)).rows[0].n,0);
+    await assert.rejects(db.exec(`update os_catalogs set data='{"area":"DETIC"}' where id='30000000-0000-4000-a000-000000000001'`), /Área imutável/);
+    assert.equal((await db.query(`select count(*)::int n from os_order_area_assignments where membership_id='${tech}' and order_id='${other}'`)).rows[0].n,1);
   } finally { await db.close(); }
 });
 

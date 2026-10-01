@@ -95,6 +95,7 @@ export type OrderServiceEntry = {
   author_id: string | null;
   author_membership_id: string | null;
   entry_type: string;
+  entry_type_name: string | null;
   description: string;
   serviced_at: string;
   created_at: string;
@@ -119,10 +120,23 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      os_service_entry_types: Table<
+        {
+          id: string;
+          key: string;
+          name: string;
+          active: boolean;
+          sort_order: number;
+        },
+        "key" | "name"
+      >;
       os_units: Table<Unit & { legacy_id: string | null }, "name">;
       os_profiles: Table<Profile, "id" | "name">;
       os_access_profiles: Table<AccessProfile, "key" | "name" | "legacy_role">;
-      os_permissions: Table<Permission, "key" | "module" | "action" | "description">;
+      os_permissions: Table<
+        Permission,
+        "key" | "module" | "action" | "description"
+      >;
       os_access_profile_permissions: Table<
         AccessProfilePermission,
         "access_profile_id" | "permission_id"
@@ -158,6 +172,21 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      os_delete_unit: { Args: { target: string }; Returns: undefined };
+      os_save_service_entry_type: {
+        Args: {
+          target: string | null;
+          type_name: string;
+          type_active: boolean;
+          type_order: number;
+        };
+        Returns: string;
+      };
+      os_delete_service_entry_type: {
+        Args: { target: string };
+        Returns: undefined;
+      };
+      os_delete_catalog: { Args: { target: string }; Returns: undefined };
       os_delete_order: {
         Args: { target: string; expected_version: number };
         Returns: undefined;
@@ -518,7 +547,11 @@ export type Database = {
         Returns: undefined;
       };
       os_prepare_professional_identity_change: {
-        Args: { target_professional: string; new_email: string; justification: string };
+        Args: {
+          target_professional: string;
+          new_email: string;
+          justification: string;
+        };
         Returns: undefined;
       };
       os_restore_professional_identity: {

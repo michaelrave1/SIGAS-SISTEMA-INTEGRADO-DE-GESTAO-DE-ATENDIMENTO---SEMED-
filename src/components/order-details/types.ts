@@ -43,7 +43,12 @@ export type OrderTimelineEvent =
   Database["public"]["Functions"]["os_order_timeline"]["Returns"][number];
 export type OrderServiceEntryView = Pick<
   Database["public"]["Tables"]["os_order_service_entries"]["Row"],
-  "id" | "entry_type" | "description" | "serviced_at" | "created_at"
+  | "id"
+  | "entry_type"
+  | "entry_type_name"
+  | "description"
+  | "serviced_at"
+  | "created_at"
 >;
 export type AvailableWorkflowAction =
   Database["public"]["Functions"]["os_order_available_actions"]["Returns"][number];

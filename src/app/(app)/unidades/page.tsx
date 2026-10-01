@@ -1,3 +1,4 @@
+import { deleteSystemCatalog } from "@/app/actions/system-catalogs";
 import Link from "next/link";
 import { session } from "@/lib/session";
 import { Heading, Notice, Pagination } from "@/components/ui";
@@ -30,16 +31,10 @@ export default async function Units({
   const permissions = await getUserPermissions(db);
   const canCreate =
     admin &&
-    permissionSetHas(
-      permissions,
-      administrationActionPermissions.CREATE_UNIT,
-    );
+    permissionSetHas(permissions, administrationActionPermissions.CREATE_UNIT);
   const canUpdate =
     admin &&
-    permissionSetHas(
-      permissions,
-      administrationActionPermissions.UPDATE_UNIT,
-    );
+    permissionSetHas(permissions, administrationActionPermissions.UPDATE_UNIT);
   const q = (p.q ?? "").slice(0, 100);
   let query = db
     .from("os_units")
@@ -65,7 +60,14 @@ export default async function Units({
         title="Unidades"
         description="Estabelecimentos vinculados ao atendimento da rede."
       />
-      <Notice error={p.erro} />
+      {p.erro === "referenced" ? (
+        <p role="alert">
+          Esta unidade possui histórico ou vínculos. Desative-a em vez de
+          excluir.
+        </p>
+      ) : (
+        <Notice error={p.erro} />
+      )}
       <form className="filters">
         <label>
           Buscar unidade
@@ -141,6 +143,20 @@ export default async function Units({
               <button>Salvar unidade</button>
             </div>
           </form>
+          {admin && item && (
+            <details>
+              <summary>Excluir unidade sem referências</summary>
+              <form action={deleteSystemCatalog}>
+                <input type="hidden" name="id" value={item.id} />
+                <input type="hidden" name="kind" value="units" />
+                <label className="checkbox">
+                  <input name="confirm" type="checkbox" required />
+                  Confirmo a exclusão desta unidade.
+                </label>
+                <button>Excluir unidade</button>
+              </form>
+            </details>
+          )}
         </section>
       )}
     </>

@@ -49,6 +49,13 @@ export default async function OrderPage({
   ensureQuerySucceeded({ error }, "Falha ao consultar ordem");
   if (!data) notFound();
 
+  const serviceTypes = await db
+    .from("os_service_entry_types")
+    .select("key,name")
+    .eq("active", true)
+    .order("sort_order")
+    .order("name");
+  ensureQuerySucceeded(serviceTypes, "Falha ao consultar tipos de atendimento");
   const order = data as OrderDetail;
   const [
     messages,
@@ -102,7 +109,9 @@ export default async function OrderPage({
     }),
     db
       .from("os_order_service_entries")
-      .select("id,entry_type,description,serviced_at,created_at")
+      .select(
+        "id,entry_type,entry_type_name,description,serviced_at,created_at",
+      )
       .eq("order_id", id)
       .order("serviced_at", { ascending: false })
       .limit(queryLimits.detailRows),
@@ -149,7 +158,10 @@ export default async function OrderPage({
   const requesters = Array.from(
     new Map(
       membershipsForWorkflow
-        .filter((membership) => membership.role === roleNames.requester && membership.user_id)
+        .filter(
+          (membership) =>
+            membership.role === roleNames.requester && membership.user_id,
+        )
         .map((membership) => [
           membership.user_id,
           {
@@ -159,12 +171,13 @@ export default async function OrderPage({
         ]),
     ).values(),
   );
-  const responsibleMemberships = (responsibleOptions.data ?? [])
-    .map((membership): ResponsibleMembershipOption => ({
+  const responsibleMemberships = (responsibleOptions.data ?? []).map(
+    (membership): ResponsibleMembershipOption => ({
       id: membership.id,
       user_id: membership.user_id,
       name: membership.name,
-    }));
+    }),
+  );
   const workflowOperations = availableActions.data ?? [];
 
   return (
@@ -174,10 +187,7 @@ export default async function OrderPage({
       <OrderCycle order={order} />
       {admin && <OrderDelete id={id} version={order.version} />}
       <div className="detail-grid">
-        <OrderSummary
-          order={order}
-          catalogs={catalogRows}
-        />
+        <OrderSummary order={order} catalogs={catalogRows} />
         <OrderAttachments
           id={id}
           attachments={attachments.data ?? []}
@@ -195,6 +205,7 @@ export default async function OrderPage({
         catalogs={catalogRows}
       />
       <OrderService
+        serviceEntryTypes={serviceTypes.data ?? []}
         id={id}
         version={order.version}
         entries={serviceEntries.data ?? []}
@@ -210,12 +221,7 @@ export default async function OrderPage({
       />
       {workflowOperations.some(
         ({ operation }) => operation === workflowActionNames.edit,
-      ) && (
-        <OrderAdministration
-          id={id}
-          order={order}
-        />
-      )}
+      ) && <OrderAdministration id={id} order={order} />}
       <OrderActivity
         id={id}
         userId={user.id}

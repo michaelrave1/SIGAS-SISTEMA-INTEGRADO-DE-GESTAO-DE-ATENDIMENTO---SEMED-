@@ -11,7 +11,8 @@ export type NavigationItem = {
     | "drivers"
     | "professionals"
     | "audit"
-    | "access_profiles";
+    | "access_profiles"
+    | "system_catalogs";
   href: string;
   label: string;
   permission: PermissionKey;
@@ -30,13 +31,59 @@ export type NavigationContext = {
 };
 
 export const navigationItems: readonly NavigationItem[] = [
-  { id: "dashboard", href: "/painel", label: "Visão geral", permission: "dashboard.view", section: "main" },
-  { id: "orders", href: "/ordens", label: "Ordens de serviço", permission: "orders.view", section: "main" },
-  { id: "units", href: "/unidades", label: "Unidades", permission: "units.view", section: "catalogs" },
-  { id: "logistics", href: "/cadastros/logistics", label: "Logística", permission: "logistics.view", section: "catalogs", requiresAdministrator: true },
-  { id: "routes", href: "/cadastros/routes", label: "Rotas", permission: "routes.view", section: "catalogs", requiresAdministrator: true },
-  { id: "vehicles", href: "/cadastros/vehicles", label: "Veículos", permission: "vehicles.view", section: "catalogs", requiresAdministrator: true },
-  { id: "drivers", href: "/cadastros/drivers", label: "Motoristas", permission: "drivers.view", section: "catalogs", requiresAdministrator: true },
+  {
+    id: "dashboard",
+    href: "/painel",
+    label: "Visão geral",
+    permission: "dashboard.view",
+    section: "main",
+  },
+  {
+    id: "orders",
+    href: "/ordens",
+    label: "Ordens de serviço",
+    permission: "orders.view",
+    section: "main",
+  },
+  {
+    id: "units",
+    href: "/unidades",
+    label: "Unidades",
+    permission: "units.view",
+    section: "catalogs",
+  },
+  {
+    id: "logistics",
+    href: "/cadastros/logistics",
+    label: "Logística",
+    permission: "logistics.view",
+    section: "catalogs",
+    requiresAdministrator: true,
+  },
+  {
+    id: "routes",
+    href: "/cadastros/routes",
+    label: "Rotas",
+    permission: "routes.view",
+    section: "catalogs",
+    requiresAdministrator: true,
+  },
+  {
+    id: "vehicles",
+    href: "/cadastros/vehicles",
+    label: "Veículos",
+    permission: "vehicles.view",
+    section: "catalogs",
+    requiresAdministrator: true,
+  },
+  {
+    id: "drivers",
+    href: "/cadastros/drivers",
+    label: "Motoristas",
+    permission: "drivers.view",
+    section: "catalogs",
+    requiresAdministrator: true,
+  },
   {
     id: "professionals",
     href: "/usuarios",
@@ -58,6 +105,14 @@ export const navigationItems: readonly NavigationItem[] = [
     href: "/perfis",
     label: "Perfis e permissões",
     permission: "professionals.manage",
+    section: "administration",
+    requiresAdministrator: true,
+  },
+  {
+    id: "system_catalogs",
+    href: "/administracao/cadastros",
+    label: "Cadastros do Sistema",
+    permission: "system_catalogs.manage",
     section: "administration",
     requiresAdministrator: true,
   },
@@ -84,6 +139,21 @@ export function firstAuthorizedRoute(
 }
 
 const staticContexts: Readonly<Record<string, NavigationContext>> = {
+  "/administracao/cadastros": {
+    title: "Cadastros do Sistema",
+    breadcrumbs: [
+      { label: "Administração" },
+      { label: "Cadastros do Sistema" },
+    ],
+  },
+  "/administracao/cadastros/atendimentos": {
+    title: "Tipos de Registro de Atendimento",
+    breadcrumbs: [
+      { label: "Administração" },
+      { label: "Cadastros do Sistema", href: "/administracao/cadastros" },
+      { label: "Tipos de Registro de Atendimento" },
+    ],
+  },
   "/painel": {
     title: "Visão geral",
     breadcrumbs: [{ label: "Início" }],
@@ -128,10 +198,7 @@ const staticContexts: Readonly<Record<string, NavigationContext>> = {
   },
   "/perfis": {
     title: "Perfis e permissões",
-    breadcrumbs: [
-      { label: "Administração" },
-      { label: "Perfis e permissões" },
-    ],
+    breadcrumbs: [{ label: "Administração" }, { label: "Perfis e permissões" }],
   },
   "/auditoria": {
     title: "Auditoria",
