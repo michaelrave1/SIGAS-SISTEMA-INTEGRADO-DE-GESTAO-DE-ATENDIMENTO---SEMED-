@@ -49,14 +49,6 @@ export function OrderAdministration({
             Justificativa da prioridade
             <input name="priority_reason" maxLength={2000} />
           </label>
-          <label>
-            B.O. / REDS
-            <input
-              name="police_report"
-              maxLength={fieldLimits.policeReport}
-              defaultValue={order.details.police_report ?? ""}
-            />
-          </label>
           <label className="span-2">
             Observações
             <textarea

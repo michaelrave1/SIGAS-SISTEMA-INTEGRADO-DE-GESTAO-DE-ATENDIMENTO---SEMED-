@@ -384,7 +384,6 @@ export async function editOrderControlled(form: FormData) {
       title: z.string().trim().min(3).max(fieldLimits.title),
       observation: z.string().trim().max(fieldLimits.observation),
       has_material: z.enum(["Não informado", "Sim", "Não"]),
-      police_report: z.string().trim().max(fieldLimits.policeReport),
       priority: z.enum(priorities),
       priority_reason: z.string().trim().max(2_000),
     })

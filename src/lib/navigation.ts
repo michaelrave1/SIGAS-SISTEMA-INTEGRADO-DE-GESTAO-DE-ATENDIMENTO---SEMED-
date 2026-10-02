@@ -89,7 +89,7 @@ export const navigationItems: readonly NavigationItem[] = [
     href: "/usuarios",
     label: "Usuários e vínculos",
     permission: "professionals.view",
-    section: "catalogs",
+    section: "administration",
     requiresAdministrator: true,
   },
   {
@@ -194,7 +194,7 @@ const staticContexts: Readonly<Record<string, NavigationContext>> = {
   },
   "/usuarios": {
     title: "Profissionais e vínculos",
-    breadcrumbs: [{ label: "Cadastros" }, { label: "Profissionais" }],
+    breadcrumbs: [{ label: "Administração" }, { label: "Usuários e vínculos" }],
   },
   "/perfis": {
     title: "Perfis e permissões",

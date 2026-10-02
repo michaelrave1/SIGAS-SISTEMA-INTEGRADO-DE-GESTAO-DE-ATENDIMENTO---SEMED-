@@ -68,7 +68,7 @@ test("breadcrumb e cabeçalho representam a rota real", () => {
   ]);
   assert.equal(
     navigationContext("/usuarios").breadcrumbs[0].label,
-    "Cadastros",
+    "Administração",
   );
   assert.equal(
     navigationContext("/perfis").breadcrumbs[0].label,
