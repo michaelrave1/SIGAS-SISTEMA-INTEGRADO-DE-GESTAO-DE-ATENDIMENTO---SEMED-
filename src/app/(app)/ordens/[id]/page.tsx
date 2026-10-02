@@ -70,7 +70,6 @@ export default async function OrderPage({
     workflowMemberships,
     collaboration,
     orderHeader,
-    responsibleOptions,
   ] = await Promise.all([
     db
       .from("os_messages")
@@ -127,7 +126,6 @@ export default async function OrderPage({
       : Promise.resolve({ data: [], error: null }),
     db.rpc("os_order_can_collaborate", { target: id }),
     db.rpc("os_order_header", { target: id }),
-    db.rpc("os_order_responsible_options", { target: id }),
   ]);
 
   ensureQueriesSucceeded(
@@ -144,10 +142,17 @@ export default async function OrderPage({
       workflowMemberships,
       collaboration,
       orderHeader,
-      responsibleOptions,
     ],
     "Falha ao consultar detalhes",
   );
+
+  const canChooseResponsible = (availableActions.data ?? []).some(
+    ({ operation }) => operation === "ASSIGN" || operation === "REASSIGN",
+  );
+  const responsibleOptions = canChooseResponsible
+    ? await db.rpc("os_order_responsible_options", { target: id })
+    : { data: [], error: null };
+  ensureQuerySucceeded(responsibleOptions, "Falha ao consultar responsáveis autorizados");
 
   const canPost = collaboration.data === true;
   const catalogRows = (catalogs.data ?? []) as OrderCatalog[];

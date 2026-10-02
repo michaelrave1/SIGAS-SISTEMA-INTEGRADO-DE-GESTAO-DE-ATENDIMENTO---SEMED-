@@ -137,6 +137,15 @@ test("RLS do novo fluxo separa origem, execução, autoria e dados internos", as
       users.admin,
       `select os_assign_order('${order}',3,'${assignedMembership}')`,
     );
+    // A visualização não pode depender da permissão administrativa de encaminhar.
+    for (const reader of [users.requester, users.assigned]) {
+      assert.equal((await asUser(reader, `select id from os_orders where id='${order}'`)).rows.length, 1);
+      await asUser(reader, `select * from os_order_header('${order}')`);
+      await asUser(reader, `select * from os_order_timeline('${order}',25,0)`);
+      const actions = (await asUser(reader, `select * from os_order_available_actions('${order}')`)).rows;
+      assert.equal(actions.some(({operation}) => operation === 'ASSIGN' || operation === 'REASSIGN'), false);
+      await assert.rejects(asUser(reader, `select * from os_order_responsible_options('${order}')`), /Acesso negado/);
+    }
     await asUser(users.assigned, `select os_start_service('${order}',4)`);
     const serviceEntry = (
       await asUser(
