@@ -426,6 +426,10 @@ export type Database = {
           has_next: boolean;
         }[];
       };
+      os_order_current_responsibles: {
+        Args: { targets: string[] };
+        Returns: { order_id: string; responsible_name: string | null; responsible_kind: "responsible" | "area_manager" | null }[];
+      };
       os_assign_order: {
         Args:
           | {

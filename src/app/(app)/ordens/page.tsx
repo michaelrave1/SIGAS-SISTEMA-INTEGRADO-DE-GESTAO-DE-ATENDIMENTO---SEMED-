@@ -7,7 +7,7 @@ import {
 import { Badge, Heading, date } from "@/components/ui";
 import { queryLimits } from "@/lib/application-config";
 import { formatOrderProtocol } from "@/lib/domain";
-import { ensureQueriesSucceeded } from "@/lib/errors";
+import { ensureQueriesSucceeded, ensureQuerySucceeded } from "@/lib/errors";
 import {
   encodeOrderCursor,
   orderFilterUrlParams,
@@ -39,6 +39,18 @@ export default async function Orders({
   ensureQueriesSucceeded([orders, filterOptions], "Falha ao consultar ordens");
 
   const rows = orders.data ?? [];
+  const responsibility = rows.length
+    ? await db.rpc("os_order_current_responsibles", {
+        targets: rows.map((order) => order.id),
+      })
+    : { data: [], error: null };
+  ensureQuerySucceeded(
+    responsibility,
+    "Falha ao consultar responsáveis pelas ordens",
+  );
+  const currentResponsibles = new Map(
+    (responsibility.data ?? []).map((item) => [item.order_id, item]),
+  );
   const first = rows[0];
   const last = rows.at(-1);
   const cursorHref = (
@@ -77,6 +89,7 @@ export default async function Orders({
             <tr>
               <th>Protocolo</th>
               <th>Solicitação</th>
+              <th>Responsável</th>
               <th>Situação</th>
               <th>Prioridade</th>
               <th>Registro</th>
@@ -94,6 +107,20 @@ export default async function Orders({
                   )}
                 </td>
                 <td>{order.title}</td>
+                <td>
+                  <span>
+                    {currentResponsibles.get(order.id)?.responsible_name ??
+                      "Não definido"}
+                  </span>
+                  {currentResponsibles.get(order.id)?.responsible_kind && (
+                    <small className="muted" style={{ display: "block" }}>
+                      {currentResponsibles.get(order.id)?.responsible_kind ===
+                      "area_manager"
+                        ? "Gestor de área"
+                        : "Responsável pelo atendimento"}
+                    </small>
+                  )}
+                </td>
                 <td>
                   <Badge status={order.status} />
                 </td>
