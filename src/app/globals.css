@@ -854,3 +854,25 @@ td small {
     grid-template-columns: 1fr;
   }
 }
+.acknowledgement-dialog {
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow: auto;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: 28px;
+  color: hsl(var(--foreground));
+  background: white;
+}
+.acknowledgement-dialog::backdrop { background: rgb(6 33 95 / 65%); }
+.acknowledgement-list { list-style: none; padding: 0; }
+.acknowledgement-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 18px 0;
+  border-bottom: 1px solid hsl(var(--border));
+}
+.acknowledgement-list li > div { flex: 1 1 240px; overflow-wrap: anywhere; }

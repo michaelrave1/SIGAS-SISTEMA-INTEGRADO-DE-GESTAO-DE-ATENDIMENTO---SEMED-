@@ -5,6 +5,7 @@ export const orderTimelineEventLabels: Readonly<Record<string, string>> = {
   category_changed: "Alteração de categoria",
   priority_changed: "Alteração de prioridade",
   order_forwarded: "Encaminhamento",
+  order_acknowledged: "Ciência do encaminhamento",
   order_assigned: "Atribuição",
   order_reassigned: "Reatribuição",
   service_started: "Início do atendimento",

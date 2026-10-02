@@ -120,6 +120,19 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      os_order_dispatches: Table<
+        {
+          id: string;
+          os_id: string;
+          usuario_destino_id: string;
+          encaminhado_em: string;
+          ciente_em: string | null;
+          ciente_por: string | null;
+          evento_id: number | null;
+          origem: "encaminhamento" | "implantacao";
+        },
+        "os_id" | "usuario_destino_id" | "encaminhado_em"
+      >;
       os_service_entry_types: Table<
         {
           id: string;
@@ -172,6 +185,11 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      os_pending_acknowledgements: {
+        Args: Record<string, never>;
+        Returns: Json;
+      };
+      os_acknowledge_dispatch: { Args: { target: string }; Returns: string };
       os_delete_unit: { Args: { target: string }; Returns: undefined };
       os_save_service_entry_type: {
         Args: {
