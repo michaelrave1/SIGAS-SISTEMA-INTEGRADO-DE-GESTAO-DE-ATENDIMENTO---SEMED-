@@ -47,6 +47,8 @@ for (const upgrade of [false, true]) test(`atendimento completo: ${upgrade ? "up
       await db.exec(await fs.readFile(new URL(migration,directory),"utf8"));
       assert.equal((await db.query("select count(*)::int n from os_messages where order_id=$1",[order])).rows[0].n,1);
     }
+    for (const file of files.filter(file => file > migration))
+      await db.exec(await fs.readFile(new URL(file,directory),"utf8"));
     const membership=(await db.query("select id from os_memberships where user_id=$1",[tech])).rows[0].id;
     const otherMembership=(await db.query("select id from os_memberships where user_id=$1",[other])).rows[0].id;
     await as(admin,"select os_start_triage($1,1)",[order]);
@@ -76,6 +78,13 @@ for (const upgrade of [false, true]) test(`atendimento completo: ${upgrade ? "up
     const beforeInvalid=await version();
     await assert.rejects(as(tech,"select os_service_operation($1,$2,'PENDING','Falha deve ser atômica','TIPO INEXISTENTE')",[order,beforeInvalid]),/Tipo de atendimento/);
     assert.equal(await version(),beforeInvalid);
+    const dateVersion=await version();
+    await assert.rejects(as(tech,"select os_service_operation($1,$2,'PENDING','Registro sem data','observação técnica',null,null,null)",[order,dateVersion]),/Data do atendimento inválida/);
+    assert.equal(await version(),dateVersion);
+    const dated=(await as(tech,"select os_service_operation($1,$2,'PENDING','Pendência com data informada','observação técnica',null,null,'2026-09-30T14:30:00-03:00') id",[order,dateVersion])).rows[0].id;
+    const entryDate=(await db.query("select serviced_at from os_order_service_entries where id=$1",[dated])).rows[0].serviced_at;
+    assert.equal(new Date(entryDate).toISOString(),"2026-09-30T17:30:00.000Z");
+    await operation("RESOLVE","Pendência com data resolvida",dated);
     const issue=(await operation("PENDING")).rows[0].id;
     const impediment=(await operation("IMPEDIMENT")).rows[0].id;
     assert.equal((await as(tech,"select * from os_order_open_service_issues($1)",[order])).rows.length,2);

@@ -317,7 +317,7 @@ export type Database = {
         Returns: undefined;
       };
       os_service_operation: {
-        Args: { target: string; expected_version: number; service_action: string; description: string; entry_kind: string; related_entry?: number | null; material_status?: string | null };
+        Args: { target: string; expected_version: number; service_action: string; description: string; entry_kind: string; related_entry?: number | null; material_status?: string | null; serviced_on: string };
         Returns: number;
       };
       os_order_open_service_issues: {

@@ -64,18 +64,20 @@ export async function serviceOperation(form: FormData) {
     service_action: z.enum(["IMPEDIMENT", "PENDING", "RESOLVE", "REQUEST_INFORMATION", "REQUEST_FORWARDING", "OPERATIONAL_UPDATE", "RETURN_TRIAGE"]),
     description: z.string().trim().min(3).max(2000),
     entry_kind: z.string().trim().min(1).max(80),
+    serviced_at: z.string().refine(value => Number.isFinite(Date.parse(value)), { message: "Data de atendimento inválida" }),
     related_entry: z.preprocess(value => value === "" || value === null ? undefined : value, z.coerce.number().int().positive().optional()),
     material_status: z.preprocess(value => value === null ? undefined : value, z.enum(["Sim", "Não", "Não informado"]).optional()),
   }).safeParse(Object.fromEntries(form));
   if (!input.success) return invalidOrderAction(form, "SERVICE_OPERATION");
   const { db } = await session();
-  const { id, version, service_action, description, entry_kind, related_entry, material_status } = input.data;
+  const { id, version, service_action, description, entry_kind, serviced_at, related_entry, material_status } = input.data;
   const permission = service_action === "RETURN_TRIAGE" ? orderActionPermissions.RETURN_TRIAGE
     : service_action === "REQUEST_INFORMATION" ? orderActionPermissions.WAIT_INFORMATION : orderActionPermissions.SERVICE_OPERATION;
   await requireActionPermission(db, permission, `/ordens/${id}`, service_action);
   const { error } = await db.rpc("os_service_operation", {
     target: id, expected_version: version, service_action, description, entry_kind,
     related_entry: related_entry ?? null, material_status: material_status ?? null,
+    serviced_on: serviced_at,
   });
   if (error) return orderActionFailed(`/ordens/${id}`, error, service_action);
   refreshOrder(id);

@@ -3,23 +3,20 @@ import { OrderDelete } from "@/components/order-details/order-delete";
 import { z } from "zod";
 import { Notice } from "@/components/ui";
 import { OrderActivity } from "@/components/order-details/order-activity";
-import { OrderAdministration } from "@/components/order-details/order-administration";
 import { OrderAttachments } from "@/components/order-details/order-attachments";
 import { OrderSummary } from "@/components/order-details/order-summary";
-import { OrderWorkflowActions } from "@/components/order-details/order-workflow-actions";
 import { OrderHeader } from "@/components/order-details/order-header";
 import { OrderCycle } from "@/components/order-details/order-cycle";
 import { OrderService } from "@/components/order-details/order-service";
 import { OrderTimeline } from "@/components/order-details/order-timeline";
 import { queryLimits } from "@/lib/application-config";
-import { roleNames, workflowActionNames } from "@/lib/domain";
+import { workflowActionNames } from "@/lib/domain";
 import { session } from "@/lib/session";
 import { ensureQueriesSucceeded, ensureQuerySucceeded } from "@/lib/errors";
 import { pageNumber, pageRange } from "@/lib/pagination";
 import type {
   OrderCatalog,
   OrderDetail,
-  ResponsibleMembershipOption,
 } from "@/components/order-details/types";
 import { requirePagePermission } from "@/lib/authorization";
 import { routePermissions } from "@/lib/authorization-policy";
@@ -60,14 +57,11 @@ export default async function OrderPage({
   const [
     messages,
     attachments,
-    units,
-    profiles,
     catalogs,
     timeline,
     serviceEntries,
     availableActions,
     attachmentPolicies,
-    workflowMemberships,
     collaboration,
     orderHeader,
   ] = await Promise.all([
@@ -83,18 +77,6 @@ export default async function OrderPage({
       .eq("order_id", id)
       .order("created_at", { ascending: false })
       .limit(queryLimits.detailRows),
-    db
-      .from("os_units")
-      .select("id,name")
-      .order("name")
-      .limit(queryLimits.lookupRows),
-    admin
-      ? db
-          .from("os_profiles")
-          .select("id,name")
-          .order("name")
-          .limit(queryLimits.lookupRows)
-      : Promise.resolve({ data: [], error: null }),
     db
       .from("os_catalogs")
       .select("id,kind,name,data")
@@ -116,14 +98,6 @@ export default async function OrderPage({
       .limit(queryLimits.detailRows),
     db.rpc("os_order_available_actions", { target: id }),
     db.rpc("os_attachment_policy"),
-    admin
-      ? db
-          .from("os_memberships")
-          .select("id,user_id,unit_id,area,role")
-          .eq("active", true)
-          .in("role", [roleNames.requester, roleNames.responsible])
-          .limit(queryLimits.lookupRows)
-      : Promise.resolve({ data: [], error: null }),
     db.rpc("os_order_can_collaborate", { target: id }),
     db.rpc("os_order_header", { target: id }),
   ]);
@@ -132,57 +106,19 @@ export default async function OrderPage({
     [
       messages,
       attachments,
-      units,
-      profiles,
       catalogs,
       timeline,
       serviceEntries,
       availableActions,
       attachmentPolicies,
-      workflowMemberships,
       collaboration,
       orderHeader,
     ],
     "Falha ao consultar detalhes",
   );
 
-  const canChooseResponsible = (availableActions.data ?? []).some(
-    ({ operation }) => operation === "ASSIGN" || operation === "REASSIGN",
-  );
-  const responsibleOptions = canChooseResponsible
-    ? await db.rpc("os_order_responsible_options", { target: id })
-    : { data: [], error: null };
-  ensureQuerySucceeded(responsibleOptions, "Falha ao consultar responsáveis autorizados");
-
   const canPost = collaboration.data === true;
   const catalogRows = (catalogs.data ?? []) as OrderCatalog[];
-  const profileName = new Map(
-    (profiles.data ?? []).map((profile) => [profile.id, profile.name]),
-  );
-  const membershipsForWorkflow = workflowMemberships.data ?? [];
-  const requesters = Array.from(
-    new Map(
-      membershipsForWorkflow
-        .filter(
-          (membership) =>
-            membership.role === roleNames.requester && membership.user_id,
-        )
-        .map((membership) => [
-          membership.user_id,
-          {
-            id: membership.user_id!,
-            name: profileName.get(membership.user_id!) ?? "Solicitante",
-          },
-        ]),
-    ).values(),
-  );
-  const responsibleMemberships = (responsibleOptions.data ?? []).map(
-    (membership): ResponsibleMembershipOption => ({
-      id: membership.id,
-      user_id: membership.user_id,
-      name: membership.name,
-    }),
-  );
   const workflowOperations = availableActions.data ?? [];
   const openIssues = await db.rpc("os_order_open_service_issues", { target: id });
   ensureQuerySucceeded(openIssues, "Falha ao consultar pendências do atendimento");
@@ -202,15 +138,6 @@ export default async function OrderPage({
           canPost={canPost}
         />
       </div>
-      <OrderWorkflowActions
-        id={id}
-        version={order.version}
-        actions={workflowOperations}
-        units={units.data ?? []}
-        requesters={requesters}
-        responsibleMemberships={responsibleMemberships}
-        catalogs={catalogRows}
-      />
       <OrderService
         serviceEntryTypes={serviceTypes.data ?? []}
         id={id}
@@ -228,9 +155,6 @@ export default async function OrderPage({
         page={timelinePage}
         total={Number(timeline.data?.[0]?.total_count ?? 0)}
       />
-      {workflowOperations.some(
-        ({ operation }) => operation === workflowActionNames.edit,
-      ) && <OrderAdministration id={id} order={order} />}
       <OrderActivity
         id={id}
         userId={user.id}

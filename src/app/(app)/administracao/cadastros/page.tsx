@@ -74,12 +74,18 @@ export default async function SystemCatalogs() {
         </ul>
       </section>
       <section className="card">
-        <h2>
-          <Link href="/administracao/cadastros/atendimentos">
-            Tipos de Registro de Atendimento
-          </Link>
-        </h2>
-        <p>Defina os tipos disponíveis, sua ordem e sua situação.</p>
+        <h2>Registro formal de atendimento</h2>
+        <p>
+          Administre os tipos utilizados no registro formal de atendimento das
+          ordens de serviço, sua ordem de exibição e sua situação.
+        </p>
+        <ul>
+          <li>
+            <Link href="/administracao/cadastros/atendimentos">
+              Tipos de Registro de Atendimento
+            </Link>
+          </li>
+        </ul>
       </section>
     </>
   );

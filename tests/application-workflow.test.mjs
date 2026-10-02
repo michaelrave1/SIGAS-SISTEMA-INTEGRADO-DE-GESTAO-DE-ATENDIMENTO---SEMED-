@@ -27,6 +27,10 @@ const serviceUi = await fs.readFile(
   ),
   "utf8",
 );
+const serviceFormUi = await fs.readFile(
+  new URL("../src/components/order-details/order-service-form.tsx", import.meta.url),
+  "utf8",
+);
 const headerUi = await fs.readFile(
   new URL("../src/components/order-details/order-header.tsx", import.meta.url),
   "utf8",
@@ -97,7 +101,7 @@ test("interface usa o contrato de operações e não o avanço genérico", () =>
   assert.ok(!summaryUi.includes("changeStatus"));
   assert.ok(!workflowUi.includes("Unidade executora"));
   assert.ok(!summaryUi.includes("next_status"));
-  assert.ok(serviceUi.includes("addServiceEntry"));
+  assert.ok(serviceFormUi.includes("addServiceEntry"));
   assert.ok(serviceUi.includes("serviceEntryTypes"));
 });
 

@@ -43,7 +43,7 @@ export default async function ServiceTypes({
     <>
       <Heading
         title="Tipos de Registro de Atendimento"
-        description="A desativação impede novos registros e preserva o histórico. Alterar o nome não modifica registros anteriores."
+        description="Tipos utilizados no Registro formal de atendimento das OS. A desativação impede novos registros e preserva o histórico. Alterar o nome não modifica registros anteriores."
       />
       {p.erro === "referenced" ? (
         <p role="alert">
