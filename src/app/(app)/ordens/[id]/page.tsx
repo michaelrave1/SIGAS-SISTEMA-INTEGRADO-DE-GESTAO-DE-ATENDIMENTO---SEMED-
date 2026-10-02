@@ -9,6 +9,7 @@ import { OrderHeader } from "@/components/order-details/order-header";
 import { OrderCycle } from "@/components/order-details/order-cycle";
 import { OrderService } from "@/components/order-details/order-service";
 import { OrderTimeline } from "@/components/order-details/order-timeline";
+import { OrderTriage } from "@/components/order-details/order-triage";
 import { queryLimits } from "@/lib/application-config";
 import { workflowActionNames } from "@/lib/domain";
 import { session } from "@/lib/session";
@@ -120,8 +121,25 @@ export default async function OrderPage({
   const canPost = collaboration.data === true;
   const catalogRows = (catalogs.data ?? []) as OrderCatalog[];
   const workflowOperations = availableActions.data ?? [];
-  const openIssues = await db.rpc("os_order_open_service_issues", { target: id });
-  ensureQuerySucceeded(openIssues, "Falha ao consultar pendências do atendimento");
+  const canForward = workflowOperations.some(
+    ({ operation }) =>
+      operation === workflowActionNames.assign ||
+      operation === workflowActionNames.reassign,
+  );
+  const responsibleOptions = canForward
+    ? await db.rpc("os_order_responsible_options", { target: id })
+    : { data: [], error: null };
+  ensureQuerySucceeded(
+    responsibleOptions,
+    "Falha ao consultar responsáveis da área",
+  );
+  const openIssues = await db.rpc("os_order_open_service_issues", {
+    target: id,
+  });
+  ensureQuerySucceeded(
+    openIssues,
+    "Falha ao consultar pendências do atendimento",
+  );
 
   return (
     <>
@@ -129,6 +147,12 @@ export default async function OrderPage({
       <Notice error={query.erro} />
       <OrderCycle order={order} />
       {admin && <OrderDelete id={id} version={order.version} />}
+      <OrderTriage
+        id={id}
+        version={order.version}
+        actions={workflowOperations}
+        responsibleMemberships={responsibleOptions.data ?? []}
+      />
       <div className="detail-grid">
         <OrderSummary order={order} catalogs={catalogRows} />
         <OrderAttachments

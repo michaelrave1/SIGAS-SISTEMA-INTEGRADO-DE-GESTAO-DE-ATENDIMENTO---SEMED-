@@ -53,8 +53,30 @@ test("responsável atual: gestor da área, encaminhamento, reatribuição, devol
     assert.deepEqual(await current(),[{order_id:order,responsible_name:"Profissional atual",responsible_kind:"responsible"}]);
     await as(manager,"select os_reassign_order($1,3,$2,'Troca de responsável')",[order,nextMembership]);
     assert.equal((await current())[0].responsible_name,"Próximo profissional");
-    await as(manager,"select os_service_operation($1,4,'RETURN_TRIAGE','Reavaliar solicitação','observação técnica')",[order]);
+    await as(nextTech,"select os_acknowledge_dispatch(id) from os_order_dispatches where os_id=$1 and ciente_em is null",[order]);
+    await as(nextTech,"select os_accept_assignment($1,4)",[order]);
+    await as(nextTech,"select os_start_service($1,5)",[order]);
+    await as(nextTech,"select os_service_operation($1,6,'RETURN_TRIAGE','Reavaliar solicitação','observação técnica')",[order]);
     assert.equal((await current())[0].responsible_name,"Gestor DETIC");
+    const returned = (await as(manager,"select status,responsible_id,responsible_membership_id,destination_unit_id,version from os_orders where id=$1",[order])).rows[0];
+    assert.equal(returned.status,"Em triagem");
+    assert.equal(returned.version,7);
+    for (const field of ["responsible_id","responsible_membership_id","destination_unit_id"]) assert.equal(returned[field],null);
+    const actions=(await as(manager,"select * from os_order_available_actions($1)",[order])).rows;
+    assert.ok(actions.some(row=>row.operation==="ASSIGN"));
+    const options=(await as(manager,"select * from os_order_responsible_options($1)",[order])).rows;
+    assert.deepEqual(new Set(options.map(row=>row.id)),new Set([membership,nextMembership]));
+    for (const unauthorized of [outsider,unitManager,requester,nextTech]) {
+      await assert.rejects(as(unauthorized,"select os_assign_order($1,7,$2)",[order,membership]),/Acesso negado|Ação não permitida/);
+      await assert.rejects(as(unauthorized,"select * from os_order_responsible_options($1)",[order]),/Acesso negado/);
+    }
+    await assert.rejects(as(manager,"select os_assign_order($1,6,$2)",[order,membership]),/alterada/);
+    await as(manager,"select os_assign_order($1,7,$2)",[order,membership]);
+    await assert.rejects(as(manager,"select os_assign_order($1,7,$2)",[order,membership]),/alterada/);
+    assert.equal((await current())[0].responsible_name,"Profissional atual");
+    assert.equal((await as(tech,"select count(*)::int n from os_order_dispatches where os_id=$1 and ciente_em is null",[order])).rows[0].n,2);
+    assert.equal((await db.query("select count(*)::int n from os_order_events where order_id=$1 and event_type='order_returned_triage'",[order])).rows[0].n,1);
+    await as(manager,"select os_service_operation($1,8,'RETURN_TRIAGE','Nova revisão da triagem','observação técnica')",[order]);
     await db.query("update os_memberships set active=false where user_id=$1",[manager]);
     assert.deepEqual(await current(),[{order_id:order,responsible_name:null,responsible_kind:null}]);
     await db.query("update os_orders set active=false where id=$1",[order]);
