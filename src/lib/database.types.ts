@@ -187,6 +187,24 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      os_service_action_catalog: {
+        Args: Record<string, never>;
+        Returns: {
+          operation: string;
+          name: string;
+          sort_order: number;
+          states: string[];
+          permission: string;
+        }[];
+      };
+      os_save_service_action_setting: {
+        Args: {
+          target_operation: string;
+          action_name: string;
+          action_order: number;
+        };
+        Returns: undefined;
+      };
       os_catalog_management_scope: {
         Args: Record<string, never>;
         Returns: Json;
@@ -317,19 +335,38 @@ export type Database = {
         Returns: undefined;
       };
       os_service_operation: {
-        Args: { target: string; expected_version: number; service_action: string; description: string; entry_kind: string; related_entry?: number | null; material_status?: string | null; serviced_on: string };
+        Args: {
+          target: string;
+          expected_version: number;
+          service_action: string;
+          description: string;
+          entry_kind: string;
+          related_entry?: number | null;
+          material_status?: string | null;
+          serviced_on: string;
+        };
         Returns: number;
       };
       os_order_open_service_issues: {
         Args: { target: string };
-        Returns: { id: number; description: string; operational_kind: string }[];
+        Returns: {
+          id: number;
+          description: string;
+          operational_kind: string;
+        }[];
       };
       os_add_message: {
         Args: { target: string; message_body: string; submission_id: string };
         Returns: string;
       };
       os_complete_order: {
-        Args: { target: string; expected_version: number; solution: string; service_summary: string; final_notes: string };
+        Args: {
+          target: string;
+          expected_version: number;
+          solution: string;
+          service_summary: string;
+          final_notes: string;
+        };
         Returns: undefined;
       };
       os_cancel_order: {
@@ -428,7 +465,11 @@ export type Database = {
       };
       os_order_current_responsibles: {
         Args: { targets: string[] };
-        Returns: { order_id: string; responsible_name: string | null; responsible_kind: "responsible" | "area_manager" | null }[];
+        Returns: {
+          order_id: string;
+          responsible_name: string | null;
+          responsible_kind: "responsible" | "area_manager" | null;
+        }[];
       };
       os_assign_order: {
         Args:

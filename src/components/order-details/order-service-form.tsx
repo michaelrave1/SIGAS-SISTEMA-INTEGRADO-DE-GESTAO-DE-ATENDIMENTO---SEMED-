@@ -14,6 +14,7 @@ import {
   isCompletionServiceType,
   availableServiceOptions,
   isServiceProgressAction,
+  type ServiceActionPresentation,
 } from "@/lib/service-actions";
 import { workflowLimits } from "@/lib/domain";
 import type { AvailableWorkflowAction } from "./types";
@@ -24,19 +25,26 @@ export function OrderServiceForm({
   actions,
   serviceEntryTypes,
   openIssues,
+  actionPresentation = [],
 }: {
   id: string;
   version: number;
   actions: AvailableWorkflowAction[];
   serviceEntryTypes: { key: string; name: string }[];
   openIssues: { id: number; description: string; operational_kind: string }[];
+  actionPresentation?: ServiceActionPresentation[];
 }) {
   const [selected, setSelected] = useState("");
-  const options = availableServiceOptions(actions, openIssues.length);
+  const options = availableServiceOptions(
+    actions,
+    openIssues.length,
+    actionPresentation,
+  );
   const selectedIsAvailable = options.some(([action]) => action === selected);
   const selectedAction = selectedIsAvailable ? selected : "";
   const isFormalEntry = selectedAction === "ADD_SERVICE_ENTRY";
   const isCompletion = selectedAction === "COMPLETE";
+  const canComplete = actions.some(({ operation }) => operation === "COMPLETE");
   const isProgress = isServiceProgressAction(selectedAction);
   const progressAction =
     selectedAction === "ACCEPT_ASSIGNMENT"
@@ -163,6 +171,24 @@ export function OrderServiceForm({
       )}
       {isCompletion && (
         <>
+          {!canComplete && (
+            <p className="notice span-2" role="status">
+              {openIssues.length > 0
+                ? "Resolva as pendências e os impedimentos antes de encerrar a OS."
+                : actions.some(
+                      ({ operation }) =>
+                        operation === "ACCEPT_ASSIGNMENT" ||
+                        operation === "START_SERVICE" ||
+                        operation === "RESUME",
+                    )
+                  ? "Assuma, inicie ou retome o atendimento antes de encerrar a OS."
+                  : actions.some(
+                        ({ operation }) => operation === "ADD_SERVICE_ENTRY",
+                      )
+                    ? "Adicione um registro de atendimento técnico antes de encerrar a OS. Se já houver um registro, verifique sua permissão de conclusão com o administrador."
+                    : "O encerramento exige atendimento iniciado, um registro técnico, ausência de pendências e autorização para concluir a OS. O administrador pode verificar seu vínculo como responsável e sua permissão de conclusão."}
+            </p>
+          )}
           <label className="span-2">
             Solução / providência adotada
             <textarea
@@ -188,7 +214,9 @@ export function OrderServiceForm({
         </>
       )}
       <div>
-        <ActionSubmitButton disabled={!selectedAction}>
+        <ActionSubmitButton
+          disabled={!selectedAction || (isCompletion && !canComplete)}
+        >
           {isProgress
             ? options.find(([action]) => action === selectedAction)?.[1]
             : isCompletion

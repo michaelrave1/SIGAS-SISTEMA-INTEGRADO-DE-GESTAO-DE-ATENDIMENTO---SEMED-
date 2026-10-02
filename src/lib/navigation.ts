@@ -143,6 +143,14 @@ export function firstAuthorizedRoute(
 }
 
 const staticContexts: Readonly<Record<string, NavigationContext>> = {
+  "/administracao/cadastros/acoes-atendimento": {
+    title: "Ações de atendimento",
+    breadcrumbs: [
+      { label: "Administração" },
+      { label: "Cadastros do Sistema", href: "/administracao/cadastros" },
+      { label: "Ações de atendimento" },
+    ],
+  },
   "/administracao/cadastros": {
     title: "Cadastros do Sistema",
     breadcrumbs: [

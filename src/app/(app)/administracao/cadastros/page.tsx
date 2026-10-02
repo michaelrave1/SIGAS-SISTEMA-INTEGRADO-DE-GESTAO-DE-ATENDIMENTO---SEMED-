@@ -81,6 +81,11 @@ export default async function SystemCatalogs() {
         </p>
         <ul>
           <li>
+            <Link href="/administracao/cadastros/acoes-atendimento">
+              Ações de atendimento
+            </Link>
+          </li>
+          <li>
             <Link href="/administracao/cadastros/atendimentos">
               Tipos de Registro de Atendimento
             </Link>

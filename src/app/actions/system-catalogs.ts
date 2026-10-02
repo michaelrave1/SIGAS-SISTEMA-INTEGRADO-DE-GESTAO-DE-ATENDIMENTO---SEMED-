@@ -12,6 +12,38 @@ import {
 } from "./shared";
 
 const typesPath = "/administracao/cadastros/atendimentos";
+export async function saveServiceActionSetting(form: FormData) {
+  const path = "/administracao/cadastros/acoes-atendimento";
+  const { db, admin } = await session();
+  requireAdministrator(admin);
+  await requireActionPermission(
+    db,
+    "system_catalogs.manage",
+    path,
+    "save_service_action_setting",
+  );
+  const input = z
+    .object({
+      operation: z.string().min(1).max(40),
+      name: z.string().trim().min(1).max(100),
+      sort_order: z.coerce.number().int().min(0).max(9999),
+    })
+    .safeParse(Object.fromEntries(form));
+  if (!input.success) return actionFailed(path, "validation");
+  const { error } = await db.rpc("os_save_service_action_setting", {
+    target_operation: input.data.operation,
+    action_name: input.data.name,
+    action_order: input.data.sort_order,
+  });
+  if (error)
+    return actionFailed(
+      path,
+      error.code === "23514" ? "validation" : "unexpected",
+    );
+  revalidatePath(path);
+  revalidatePath("/ordens", "layout");
+  redirect(path);
+}
 export async function setCatalogActive(form: FormData) {
   const { db } = await session();
   const kind = formText(form, "kind");
@@ -70,7 +102,9 @@ export async function saveServiceEntryType(form: FormData) {
   if (error)
     return actionFailed(
       typesPath,
-      error.code === "23505" || error.code === "23514" ? "validation" : "unexpected",
+      error.code === "23505" || error.code === "23514"
+        ? "validation"
+        : "unexpected",
     );
   revalidatePath(typesPath);
   revalidatePath("/ordens", "layout");

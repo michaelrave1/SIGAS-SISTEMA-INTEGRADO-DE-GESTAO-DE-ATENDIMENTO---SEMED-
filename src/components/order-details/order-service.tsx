@@ -2,6 +2,7 @@ import { date } from "@/components/ui";
 import {
   availableServiceOptions,
   serviceActionOptions,
+  type ServiceActionPresentation,
 } from "@/lib/service-actions";
 import { OrderServiceForm } from "./order-service-form";
 import type { AvailableWorkflowAction, OrderServiceEntryView } from "./types";
@@ -14,6 +15,7 @@ export function OrderService({
   serviceEntryTypes,
   actions,
   openIssues,
+  actionPresentation = [],
 }: {
   id: string;
   version: number;
@@ -22,9 +24,14 @@ export function OrderService({
   serviceEntryTypes: { key: string; name: string }[];
   actions: AvailableWorkflowAction[];
   openIssues: { id: number; description: string; operational_kind: string }[];
+  actionPresentation?: ServiceActionPresentation[];
 }) {
   const unresolved = openIssues;
-  const operations = availableServiceOptions(actions, unresolved.length);
+  const operations = availableServiceOptions(
+    actions,
+    unresolved.length,
+    actionPresentation,
+  );
   if (!canAdd && !entries.length && !operations.length) return null;
 
   return (
@@ -45,6 +52,7 @@ export function OrderService({
         actions={actions}
         serviceEntryTypes={serviceEntryTypes}
         openIssues={openIssues}
+        actionPresentation={actionPresentation}
       />
       {unresolved.length > 0 && (
         <p role="status">

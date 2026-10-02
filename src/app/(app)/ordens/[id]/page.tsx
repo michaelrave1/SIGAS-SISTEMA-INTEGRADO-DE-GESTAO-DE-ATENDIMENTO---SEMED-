@@ -10,6 +10,7 @@ import { OrderCycle } from "@/components/order-details/order-cycle";
 import { OrderService } from "@/components/order-details/order-service";
 import { OrderTimeline } from "@/components/order-details/order-timeline";
 import { OrderTriage } from "@/components/order-details/order-triage";
+import { loadServiceActionCatalog } from "@/lib/service-action-catalog";
 import { queryLimits } from "@/lib/application-config";
 import { workflowActionNames } from "@/lib/domain";
 import { session } from "@/lib/session";
@@ -65,6 +66,7 @@ export default async function OrderPage({
     attachmentPolicies,
     collaboration,
     orderHeader,
+    actionCatalog,
   ] = await Promise.all([
     db
       .from("os_messages")
@@ -101,6 +103,7 @@ export default async function OrderPage({
     db.rpc("os_attachment_policy"),
     db.rpc("os_order_can_collaborate", { target: id }),
     db.rpc("os_order_header", { target: id }),
+    loadServiceActionCatalog(db),
   ]);
 
   ensureQueriesSucceeded(
@@ -163,6 +166,7 @@ export default async function OrderPage({
         />
       </div>
       <OrderService
+        actionPresentation={actionCatalog.rows}
         serviceEntryTypes={serviceTypes.data ?? []}
         id={id}
         version={order.version}

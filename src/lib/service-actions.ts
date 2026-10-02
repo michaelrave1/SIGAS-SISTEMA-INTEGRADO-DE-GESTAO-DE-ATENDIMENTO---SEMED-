@@ -14,16 +14,41 @@ export const serviceActionOptions = [
 ] as const;
 
 export type ServiceAction = (typeof serviceActionOptions)[number][0];
+export type ServiceActionPresentation = {
+  operation: string;
+  name: string;
+  sort_order: number;
+};
 
 export function availableServiceOptions(
   actions: readonly { operation: string }[],
   openIssueCount: number,
+  presentation: readonly ServiceActionPresentation[] = [],
 ) {
   const allowed = new Set(actions.map(({ operation }) => operation));
-  return serviceActionOptions.filter(
-    ([action]) =>
-      allowed.has(action) && (action !== "RESOLVE" || openIssueCount > 0),
+  const showCompletion = serviceActionOptions.some(([action]) =>
+    allowed.has(action),
   );
+  const settings = new Map(presentation.map((row) => [row.operation, row]));
+  return serviceActionOptions
+    .filter(
+      ([action]) =>
+        (allowed.has(action) || (action === "COMPLETE" && showCompletion)) &&
+        (action !== "RESOLVE" || openIssueCount > 0),
+    )
+    .map(([action, label], index) => ({
+      action,
+      label: settings.get(action)?.name ?? label,
+      order:
+        settings.get(action)?.sort_order ??
+        serviceActionOptions.findIndex(([key]) => key === action),
+      index,
+    }))
+    .sort((a, b) => a.order - b.order || a.index - b.index)
+    .map(({ action, label }): readonly [ServiceAction, string] => [
+      action,
+      label,
+    ]);
 }
 
 export function isServiceProgressAction(action: string) {
