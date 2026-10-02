@@ -1,6 +1,7 @@
 export const actionErrorCodes = [
   "professional_configuration",
   "professional_conflict",
+  "professional_order_link",
   "validation",
   "conflict",
   "forbidden",
@@ -21,7 +22,9 @@ export function classifyOrderRpcError(error: unknown): ActionErrorCode {
   const candidate = error as DatabaseErrorLike;
   const code = typeof candidate.code === "string" ? candidate.code : "";
   const message =
-    typeof candidate.message === "string" ? candidate.message.toLowerCase() : "";
+    typeof candidate.message === "string"
+      ? candidate.message.toLowerCase()
+      : "";
 
   if (
     message.includes("conflito de versão") ||
@@ -52,13 +55,18 @@ export function classifyOrderRpcError(error: unknown): ActionErrorCode {
 }
 
 export const actionErrorMessages: Record<ActionErrorCode, string> = {
-  professional_configuration: "O perfil de acesso está indisponível. Solicite ao administrador a verificação da configuração dos perfis.",
-  professional_conflict: "O vínculo não pode ser alterado por possuir associações ou restrições de acesso. Revise os vínculos do profissional.",
+  professional_configuration:
+    "O perfil de acesso está indisponível. Solicite ao administrador a verificação da configuração dos perfis.",
+  professional_conflict:
+    "O vínculo não pode ser alterado por possuir associações ou restrições de acesso. Revise os vínculos do profissional.",
+  professional_order_link:
+    "Este vínculo está associado a ordens de serviço e seu papel não pode ser substituído. Preserve o vínculo histórico; o acesso administrativo deve ser concedido por um vínculo separado. Concluir a OS não remove essa associação.",
   validation: "Revise os campos informados e tente novamente.",
   conflict:
     "A ordem foi alterada por outra pessoa. Atualize a página antes de tentar novamente.",
   forbidden: "Seu usuário não possui permissão para executar esta operação.",
-  not_found: "A ordem solicitada não foi encontrada ou não está mais disponível.",
+  not_found:
+    "A ordem solicitada não foi encontrada ou não está mais disponível.",
   business_rule:
     "A operação não pode ser concluída no estado atual da ordem. Atualize a página e revise os dados.",
   unexpected: "Não foi possível concluir a operação. Tente novamente.",

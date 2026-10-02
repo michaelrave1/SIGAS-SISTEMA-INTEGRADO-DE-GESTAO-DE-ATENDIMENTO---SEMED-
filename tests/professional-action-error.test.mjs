@@ -10,7 +10,8 @@ test("erros do cadastro distinguem configuração, autorização e vínculos sem
     [{ message: "Área obrigatória para este perfil" }, "validation"],
     [{ message: "Área inválida" }, "validation"],
     [{ code: "23505", message: "private SQL detail" }, "professional_conflict"],
-    [{ message: "Vínculo de solicitante referenciado por ordem" }, "professional_conflict"],
+    [{ message: "Vínculo de solicitante referenciado por ordem" }, "professional_order_link"],
+    [{ message: "Vínculo de responsável referenciado por ordem" }, "professional_order_link"],
     [{ code: "XX000", message: "private SQL detail" }, "unexpected"],
   ]) {
     assert.equal(classifyProfessionalError(error), expected);

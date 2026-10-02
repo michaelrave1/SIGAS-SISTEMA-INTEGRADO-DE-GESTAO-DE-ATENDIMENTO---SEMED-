@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { classifyProfessionalError } from "@/lib/professional-action-error";
+import { professionalRoleScope } from "@/lib/professional-role-scope";
 import { logServerEvent } from "@/lib/observability";
 import { currentRequestId } from "@/lib/request-context";
 import { fieldLimits } from "@/lib/application-config";
@@ -203,11 +204,16 @@ export async function saveMembership(form: FormData) {
 export async function saveProfessionalMembership(form: FormData) {
   const { db, admin } = await session();
   requireAdministrator(admin);
+  const submittedRole = formText(form, "role");
   const input = professionalMembershipSchema.safeParse({
     ...Object.fromEntries(form),
     id: formText(form, "id"),
     professional_id: formText(form, "professional_id"),
-    area: formText(form, "area"),
+    ...professionalRoleScope(
+      submittedRole,
+      formText(form, "unit_id"),
+      formText(form, "area"),
+    ),
   });
   if (!input.success)
     return actionFailed("/usuarios", "validation", "save_professional");
@@ -238,6 +244,7 @@ export async function saveProfessionalMembership(form: FormData) {
     "save_professional",
   );
   if (
+    (!input.data.id && Boolean(input.data.professional_id)) ||
     input.data.role === roleNames.administrator ||
     currentMembership?.data?.role === roleNames.administrator
   )

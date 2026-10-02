@@ -1,7 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { session } from "@/lib/session";
-import { normalizeAreaName, roleLabels, roleNames, type Role } from "@/lib/domain";
+import {
+  normalizeAreaName,
+  roleLabels,
+  roleNames,
+  type Role,
+} from "@/lib/domain";
 import { Heading, Notice, Pagination } from "@/components/ui";
 import { pageNumber } from "@/lib/pagination";
 import { fieldLimits, queryLimits } from "@/lib/application-config";
@@ -21,8 +26,15 @@ import {
   routePermissions,
 } from "@/lib/authorization-policy";
 
-export default async function Users({ searchParams }: {
-  searchParams: Promise<{ page?: string; edit?: string; erro?: string }>;
+export default async function Users({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    page?: string;
+    edit?: string;
+    erro?: string;
+    add_link?: string;
+  }>;
 }) {
   const { db, admin } = await session();
   if (!admin) redirect("/sem-acesso");
@@ -48,119 +60,325 @@ export default async function Users({ searchParams }: {
   const p = await searchParams;
   const page = pageNumber(p.page);
   const [units, memberships, categoryAreas] = await Promise.all([
-    db.from("os_units").select("id,name").order("name").limit(queryLimits.lookupRows),
+    db
+      .from("os_units")
+      .select("id,name")
+      .order("name")
+      .limit(queryLimits.lookupRows),
     db.rpc("os_professional_memberships", {
       page_size: queryLimits.pageSize,
       page_offset: (page - 1) * queryLimits.pageSize,
     }),
-    db.from("os_catalogs").select("data").eq("kind", "logistics").eq("active", true)
+    db
+      .from("os_catalogs")
+      .select("data")
+      .eq("kind", "logistics")
+      .eq("active", true)
       .limit(queryLimits.lookupRows),
   ]);
-  ensureQueriesSucceeded([units, memberships, categoryAreas], "Falha ao consultar profissionais");
-  const areas = [...new Set((categoryAreas.data ?? [])
-    .map((category) => category.data.area ? normalizeAreaName(category.data.area) : "")
-    .filter((area): area is string => Boolean(area)))]
-    .sort((left, right) => left.localeCompare(right, "pt-BR"));
+  ensureQueriesSucceeded(
+    [units, memberships, categoryAreas],
+    "Falha ao consultar profissionais",
+  );
+  const areas = [
+    ...new Set(
+      (categoryAreas.data ?? [])
+        .map((category) =>
+          category.data.area ? normalizeAreaName(category.data.area) : "",
+        )
+        .filter((area): area is string => Boolean(area)),
+    ),
+  ].sort((left, right) => left.localeCompare(right, "pt-BR"));
   const rows = memberships.data ?? [];
   const item = canSelect
     ? rows.find((membership) => membership.membership_id === p.edit)
     : undefined;
   const total = Number(rows[0]?.total_count ?? 0);
+  const addingLink = Boolean(item && canManage && p.add_link === "true");
 
-  return <>
-    <Heading title="Profissionais e vínculos"
-      description="Pré-cadastre o e-mail institucional. A identidade Google será vinculada no primeiro acesso confirmado." />
-    <Notice error={p.erro} />
-    <section className="card table-wrap">
-      <table>
-        <thead><tr><th>Profissional</th><th>Conta institucional</th><th>Unidade</th><th>Área</th><th>Papel</th><th>Situação</th><th>Ação</th></tr></thead>
-        <tbody>{rows.map((membership) => <tr key={membership.membership_id ?? membership.professional_id}>
-          <td>{membership.professional_name}</td>
-          <td>
-            {membership.institutional_email ?? "E-mail pendente (legado)"}<br />
-            <small className="muted">{membership.identity_linked
-              ? "Google vinculado"
-              : membership.relink_pending ? "Nova vinculação autorizada" : "Aguardando primeiro acesso"}</small>
-          </td>
-          <td>{units.data?.find((unit) => unit.id === membership.unit_id)?.name ?? "Secretaria / rede"}</td>
-          <td>{membership.area ?? "—"}</td>
-          <td>{membership.role ? roleLabels[membership.role as Role] : "Sem vínculo"}</td>
-          <td>{membership.professional_active && membership.membership_active ? "Ativo" : "Inativo"}</td>
-          <td>{canSelect && membership.membership_id && <Link href={`/usuarios?page=${page}&edit=${membership.membership_id}`}>Administrar</Link>}</td>
-        </tr>)}</tbody>
-      </table>
-      <Pagination page={page} total={total} base="/usuarios" />
-    </section>
+  return (
+    <>
+      <Heading
+        title="Profissionais e vínculos"
+        description="Pré-cadastre o e-mail institucional. A identidade Google será vinculada no primeiro acesso confirmado."
+      />
+      <Notice error={p.erro} />
+      <section className="card table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Profissional</th>
+              <th>Conta institucional</th>
+              <th>Unidade</th>
+              <th>Área</th>
+              <th>Papel</th>
+              <th>Situação</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((membership) => (
+              <tr key={membership.membership_id ?? membership.professional_id}>
+                <td>{membership.professional_name}</td>
+                <td>
+                  {membership.institutional_email ?? "E-mail pendente (legado)"}
+                  <br />
+                  <small className="muted">
+                    {membership.identity_linked
+                      ? "Google vinculado"
+                      : membership.relink_pending
+                        ? "Nova vinculação autorizada"
+                        : "Aguardando primeiro acesso"}
+                  </small>
+                </td>
+                <td>
+                  {units.data?.find((unit) => unit.id === membership.unit_id)
+                    ?.name ?? "Secretaria / rede"}
+                </td>
+                <td>{membership.area ?? "—"}</td>
+                <td>
+                  {membership.role
+                    ? roleLabels[membership.role as Role]
+                    : "Sem vínculo"}
+                </td>
+                <td>
+                  {membership.professional_active &&
+                  membership.membership_active
+                    ? "Ativo"
+                    : "Inativo"}
+                </td>
+                <td>
+                  {canSelect && membership.membership_id && (
+                    <Link
+                      href={`/usuarios?page=${page}&edit=${membership.membership_id}`}
+                    >
+                      Administrar
+                    </Link>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <Pagination page={page} total={total} base="/usuarios" />
+      </section>
 
-    {((item && canUpdate && (item.role !== roleNames.administrator || canManage)) ||
-      (!item && canCreate)) && <section className="card">
-      <h2>{item ? "Editar profissional e vínculo" : "Pré-cadastrar profissional"}</h2>
-      <p className="muted">Informe o e-mail do Google Workspace. O cadastro não cria senha, convite manual ou identificador técnico no Supabase Auth.</p>
-      <form action={saveProfessionalMembership} key={item?.membership_id ?? "new"} className="form-grid">
-        <input type="hidden" name="id" value={item?.membership_id ?? ""} />
-        <input type="hidden" name="professional_id" value={item?.professional_id ?? ""} />
-        <label>E-mail institucional
-          <input name="email" type="email" required={!item} readOnly={item?.identity_linked ?? false}
-            maxLength={fieldLimits.email} defaultValue={item?.institutional_email ?? ""} autoComplete="email" />
-        </label>
-        <label>Nome do profissional
-          <input name="name" required maxLength={fieldLimits.profileName} defaultValue={item?.professional_name ?? ""} />
-        </label>
-        <label>Matrícula<input name="registration" maxLength={80} defaultValue={item?.registration ?? ""} /></label>
-        <label>Cargo / função<input name="position" maxLength={160} defaultValue={item?.job_title ?? ""} /></label>
-        <ProfessionalRoleFields
-          initialRole={(item?.role as Role | null) ?? roleNames.requester}
-          initialArea={item?.area ?? ""}
-          areas={areas}
-          canManage={canManage}
-        />
-        <label>Unidade
-          <select name="unit_id" defaultValue={item?.unit_id ?? ""}>
-            <option value="">Secretaria / rede (admin ou gestor de área)</option>
-            {units.data?.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
-          </select>
-        </label>
-        <label className="checkbox"><input name={canDelete ? "professional_active" : undefined} type="checkbox"
-          disabled={!canDelete} defaultChecked={item?.professional_active ?? true} />Profissional ativo</label>
-        {!canDelete && (item?.professional_active ?? true) && <input type="hidden" name="professional_active" value="on" />}
-        <label className="checkbox"><input name={canDelete ? "membership_active" : undefined} type="checkbox"
-          disabled={!canDelete} defaultChecked={item?.membership_active ?? true} />Vínculo ativo</label>
-        {!canDelete && (item?.membership_active ?? true) && <input type="hidden" name="membership_active" value="on" />}
-        <div><button>Salvar cadastro</button></div>
-      </form>
-    </section>}
+      {((item &&
+        canUpdate &&
+        (item.role !== roleNames.administrator || canManage)) ||
+        (!item && canCreate)) && (
+        <section className="card">
+          <h2>
+            {item
+              ? addingLink
+                ? "Adicionar vínculo ao profissional"
+                : "Editar profissional e vínculo"
+              : "Pré-cadastrar profissional"}
+          </h2>
+          {item && canManage && !addingLink && (
+            <p>
+              <Link
+                href={`/usuarios?page=${page}&edit=${item.membership_id}&add_link=true`}
+              >
+                Adicionar vínculo ao mesmo profissional
+              </Link>
+            </p>
+          )}
+          {addingLink && (
+            <p className="notice">
+              Novo vínculo para o mesmo profissional. O vínculo anterior e suas
+              associações às OS serão preservados. Para conceder acesso
+              administrativo, selecione Administrador.
+            </p>
+          )}
+          <p className="muted">
+            Informe o e-mail do Google Workspace. O cadastro não cria senha,
+            convite manual ou identificador técnico no Supabase Auth.
+          </p>
+          <form
+            action={saveProfessionalMembership}
+            key={`${item?.membership_id ?? "new"}:${addingLink}`}
+            className="form-grid"
+          >
+            <input
+              type="hidden"
+              name="id"
+              value={addingLink ? "" : (item?.membership_id ?? "")}
+            />
+            <input
+              type="hidden"
+              name="professional_id"
+              value={item?.professional_id ?? ""}
+            />
+            <label>
+              E-mail institucional
+              <input
+                name="email"
+                type="email"
+                required={!item}
+                readOnly={item?.identity_linked ?? false}
+                maxLength={fieldLimits.email}
+                defaultValue={item?.institutional_email ?? ""}
+                autoComplete="email"
+              />
+            </label>
+            <label>
+              Nome do profissional
+              <input
+                name="name"
+                required
+                maxLength={fieldLimits.profileName}
+                defaultValue={item?.professional_name ?? ""}
+              />
+            </label>
+            <label>
+              Matrícula
+              <input
+                name="registration"
+                maxLength={80}
+                defaultValue={item?.registration ?? ""}
+              />
+            </label>
+            <label>
+              Cargo / função
+              <input
+                name="position"
+                maxLength={160}
+                defaultValue={item?.job_title ?? ""}
+              />
+            </label>
+            <ProfessionalRoleFields
+              initialRole={(item?.role as Role | null) ?? roleNames.requester}
+              initialArea={item?.area ?? ""}
+              areas={areas}
+              canManage={canManage}
+              initialUnit={item?.unit_id ?? ""}
+              units={units.data ?? []}
+            />
+            <label className="checkbox">
+              <input
+                name={canDelete ? "professional_active" : undefined}
+                type="checkbox"
+                disabled={!canDelete}
+                defaultChecked={item?.professional_active ?? true}
+              />
+              Profissional ativo
+            </label>
+            {!canDelete && (item?.professional_active ?? true) && (
+              <input type="hidden" name="professional_active" value="on" />
+            )}
+            <label className="checkbox">
+              <input
+                name={canDelete ? "membership_active" : undefined}
+                type="checkbox"
+                disabled={!canDelete}
+                defaultChecked={item?.membership_active ?? true}
+              />
+              Vínculo ativo
+            </label>
+            {!canDelete && (item?.membership_active ?? true) && (
+              <input type="hidden" name="membership_active" value="on" />
+            )}
+            <div>
+              <button>Salvar cadastro</button>
+            </div>
+          </form>
+        </section>
+      )}
 
-    {item?.membership_id && item.membership_active && canDelete &&
-      (item.role !== roleNames.administrator || canManage) && <section className="card">
-      <h2>Desativar vínculo</h2>
-      <p className="muted">O histórico será preservado e o acesso por este vínculo será interrompido.</p>
-      <form action={deactivateProfessionalMembership}>
-        <input type="hidden" name="membership_id" value={item.membership_id} />
-        <ActionSubmitButton className="danger" pendingLabel="Desativando..."
-          confirmMessage={`Desativar o vínculo de “${item.professional_name}”?`}>
-          Desativar vínculo
-        </ActionSubmitButton>
-      </form>
-    </section>}
+      {!addingLink &&
+        item?.membership_id &&
+        item.membership_active &&
+        canDelete &&
+        (item.role !== roleNames.administrator || canManage) && (
+          <section className="card">
+            <h2>Desativar vínculo</h2>
+            <p className="muted">
+              O histórico será preservado e o acesso por este vínculo será
+              interrompido.
+            </p>
+            <form action={deactivateProfessionalMembership}>
+              <input
+                type="hidden"
+                name="membership_id"
+                value={item.membership_id}
+              />
+              <ActionSubmitButton
+                className="danger"
+                pendingLabel="Desativando..."
+                confirmMessage={`Desativar o vínculo de “${item.professional_name}”?`}
+              >
+                Desativar vínculo
+              </ActionSubmitButton>
+            </form>
+          </section>
+        )}
 
-    {canManage && item?.identity_linked && <section className="card">
-      <h2>Alterar identidade institucional</h2>
-      <p className="muted">Esta operação administrativa desvincula a conta atual e autoriza uma conta Google diferente, previamente cadastrada pelo novo e-mail.</p>
-      <form action={prepareProfessionalIdentityChange} className="form-grid">
-        <input type="hidden" name="professional_id" value={item.professional_id} />
-        <label>Novo e-mail institucional<input name="new_email" type="email" required maxLength={fieldLimits.email} /></label>
-        <label>Justificativa<textarea name="justification" required minLength={10} maxLength={500} /></label>
-        <div><button>Autorizar nova identidade</button></div>
-      </form>
-    </section>}
+      {canManage && item?.identity_linked && (
+        <section className="card">
+          <h2>Alterar identidade institucional</h2>
+          <p className="muted">
+            Esta operação administrativa desvincula a conta atual e autoriza uma
+            conta Google diferente, previamente cadastrada pelo novo e-mail.
+          </p>
+          <form
+            action={prepareProfessionalIdentityChange}
+            className="form-grid"
+          >
+            <input
+              type="hidden"
+              name="professional_id"
+              value={item.professional_id}
+            />
+            <label>
+              Novo e-mail institucional
+              <input
+                name="new_email"
+                type="email"
+                required
+                maxLength={fieldLimits.email}
+              />
+            </label>
+            <label>
+              Justificativa
+              <textarea
+                name="justification"
+                required
+                minLength={10}
+                maxLength={500}
+              />
+            </label>
+            <div>
+              <button>Autorizar nova identidade</button>
+            </div>
+          </form>
+        </section>
+      )}
 
-    {canManage && item?.relink_pending && <section className="card">
-      <h2>Restaurar identidade anterior</h2>
-      <form action={restoreProfessionalIdentity} className="form-grid">
-        <input type="hidden" name="professional_id" value={item.professional_id} />
-        <label className="span-2">Justificativa<textarea name="justification" required minLength={10} maxLength={500} /></label>
-        <div><button>Restaurar vínculo anterior</button></div>
-      </form>
-    </section>}
-  </>;
+      {canManage && item?.relink_pending && (
+        <section className="card">
+          <h2>Restaurar identidade anterior</h2>
+          <form action={restoreProfessionalIdentity} className="form-grid">
+            <input
+              type="hidden"
+              name="professional_id"
+              value={item.professional_id}
+            />
+            <label className="span-2">
+              Justificativa
+              <textarea
+                name="justification"
+                required
+                minLength={10}
+                maxLength={500}
+              />
+            </label>
+            <div>
+              <button>Restaurar vínculo anterior</button>
+            </div>
+          </form>
+        </section>
+      )}
+    </>
+  );
 }

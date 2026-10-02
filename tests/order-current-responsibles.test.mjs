@@ -51,6 +51,15 @@ test("responsável atual: gestor da área, encaminhamento, reatribuição, devol
     await as(manager,"select os_start_triage($1,1)",[order]);
     await as(manager,"select os_assign_order($1,2,$2)",[order,membership]);
     assert.deepEqual(await current(),[{order_id:order,responsible_name:"Profissional atual",responsible_kind:"responsible"}]);
+    const professional=(await db.query("select professional_id from os_memberships where id=$1",[membership])).rows[0].professional_id;
+    const saveAdmin="select os_save_professional_membership($1,$2,'','Profissional atual','','',null,'admin',null,true,true) id";
+    await assert.rejects(as(admin,saveAdmin,[membership,professional]),/referenciado por ordem/);
+    const adminLink=(await as(admin,saveAdmin,[null,professional])).rows[0].id;
+    assert.notEqual(adminLink,membership);
+    assert.equal((await db.query("select role from os_memberships where id=$1",[membership])).rows[0].role,"responsavel");
+    assert.equal((await db.query("select responsible_membership_id from os_orders where id=$1",[order])).rows[0].responsible_membership_id,membership);
+    assert.equal((await db.query("select p.key from os_memberships m join os_access_profiles p on p.id=m.access_profile_id where m.id=$1",[adminLink])).rows[0].key,"admin");
+    await db.query("update os_memberships set active=false where id=$1",[adminLink]);
     await as(manager,"select os_reassign_order($1,3,$2,'Troca de responsável')",[order,nextMembership]);
     assert.equal((await current())[0].responsible_name,"Próximo profissional");
     await as(nextTech,"select os_acknowledge_dispatch(id) from os_order_dispatches where os_id=$1 and ciente_em is null",[order]);
