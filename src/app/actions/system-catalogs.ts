@@ -70,7 +70,7 @@ export async function saveServiceEntryType(form: FormData) {
   if (error)
     return actionFailed(
       typesPath,
-      error.code === "23505" ? "validation" : "unexpected",
+      error.code === "23505" || error.code === "23514" ? "validation" : "unexpected",
     );
   revalidatePath(typesPath);
   revalidatePath("/ordens", "layout");

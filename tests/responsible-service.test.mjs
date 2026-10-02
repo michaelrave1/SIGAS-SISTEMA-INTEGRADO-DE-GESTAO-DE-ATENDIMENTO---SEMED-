@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
+import { buildOrderCycle } from "../src/lib/order-workflow.ts";
 
 const directory = new URL("../supabase/migrations/", import.meta.url);
 const files = (await fs.readdir(directory)).filter(name => name.endsWith(".sql") && !name.endsWith("_performance_indexes.sql")).sort();
@@ -47,8 +48,17 @@ for (const upgrade of [false, true]) test(`atendimento completo: ${upgrade ? "up
       await db.exec(await fs.readFile(new URL(migration,directory),"utf8"));
       assert.equal((await db.query("select count(*)::int n from os_messages where order_id=$1",[order])).rows[0].n,1);
     }
+    // Cadastro legado de encerramento: a correção preserva o atendimento,
+    // mas impede que esse tipo continue sendo utilizado como registro comum.
+    await db.exec(`insert into os_service_entry_types(key,name) values('encerrar_atendimento','ENCERRAR ATENDIMENTO');
+      insert into os_order_service_entries(order_id,entry_type,description,serviced_at)
+      values('${order}','encerrar_atendimento','Registro histórico de encerramento',now());`);
     for (const file of files.filter(file => file > migration))
       await db.exec(await fs.readFile(new URL(file,directory),"utf8"));
+    assert.equal((await db.query("select active from os_service_entry_types where key='encerrar_atendimento'")).rows[0].active,false);
+    assert.equal((await db.query("select count(*)::int n from os_order_service_entries where order_id=$1 and entry_type='encerrar_atendimento'",[order])).rows[0].n,1);
+    await assert.rejects(as(admin,"select os_save_service_entry_type(null,'Encerramento do atendimento',true,0)"),/Encerramento/);
+    await assert.rejects(db.exec("update os_service_entry_types set active=true where key='encerrar_atendimento'"),/Encerramento/);
     const membership=(await db.query("select id from os_memberships where user_id=$1",[tech])).rows[0].id;
     const otherMembership=(await db.query("select id from os_memberships where user_id=$1",[other])).rows[0].id;
     await as(admin,"select os_start_triage($1,1)",[order]);
@@ -72,6 +82,7 @@ for (const upgrade of [false, true]) test(`atendimento completo: ${upgrade ? "up
     await assert.rejects(as(other,"select os_start_service($1,4)",[order]),/Ação não permitida/);
     await assert.rejects(as(outsider,"select os_start_service($1,4)",[order]),/Ação não permitida/);
     await as(tech,"select os_start_service($1,4)",[order]);
+    await assert.rejects(as(tech,"select os_add_service_entry($1,$2,'encerrar_atendimento','Encerramento incorreto',now())",[order,await version()]),/conclusão/);
     await assert.rejects(as(tech,"select os_start_service($1,4)",[order]),/alterada/);
     for(const kind of ["diagnóstico","ação realizada","visita","material","observação técnica"])
       await as(tech,"select os_add_service_entry($1,$2,$3,'Serviço técnico registrado',now())",[order,await version(),kind]);
@@ -149,6 +160,7 @@ for (const upgrade of [false, true]) test(`atendimento completo: ${upgrade ? "up
     await as(tech,"select os_complete_order($1,$2,'Equipamento normalizado','Diagnóstico, visita e reparo executados','Sem restrições')",[order,lastVersion]);
     const closed=await state();
     assert.equal(closed.status,"Concluída"); assert.ok(closed.completed_at);
+    assert.equal(buildOrderCycle(closed.status,closed.resume_status).stages.at(-1).state,"completed");
     assert.equal(closed.final_observations,"Sem restrições");
     await assert.rejects(as(tech,"select os_complete_order($1,$2,'Solução','Resumo','')",[order,lastVersion]),/alterada/);
     await assert.rejects(operation("PENDING"),/Ação não permitida/);

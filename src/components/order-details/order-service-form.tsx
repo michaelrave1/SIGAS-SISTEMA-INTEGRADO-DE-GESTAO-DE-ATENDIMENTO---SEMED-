@@ -1,9 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { addServiceEntry, serviceOperation } from "@/app/actions/orders";
+import {
+  addServiceEntry,
+  completeOrder,
+  serviceOperation,
+} from "@/app/actions/orders";
 import { ActionSubmitButton } from "@/components/action-submit-button";
-import { serviceActionOptions } from "@/lib/service-actions";
+import {
+  isCompletionServiceType,
+  serviceActionOptions,
+} from "@/lib/service-actions";
 import { workflowLimits } from "@/lib/domain";
 import type { AvailableWorkflowAction } from "./types";
 
@@ -29,12 +36,22 @@ export function OrderServiceForm({
   const selectedIsAvailable = options.some(([action]) => action === selected);
   const selectedAction = selectedIsAvailable ? selected : "";
   const isFormalEntry = selectedAction === "ADD_SERVICE_ENTRY";
+  const isCompletion = selectedAction === "COMPLETE";
+  const recordTypes = serviceEntryTypes.filter(
+    (type) => !isCompletionServiceType(type.key, type.name),
+  );
 
   if (!options.length) return null;
 
   return (
     <form
-      action={isFormalEntry ? addServiceEntry : serviceOperation}
+      action={
+        isCompletion
+          ? completeOrder
+          : isFormalEntry
+            ? addServiceEntry
+            : serviceOperation
+      }
       className="form-grid service-entry-form"
     >
       <input type="hidden" name="id" value={id} />
@@ -55,31 +72,35 @@ export function OrderServiceForm({
           ))}
         </select>
       </label>
-      <label>
-        Tipo do registro
-        <select
-          name={isFormalEntry ? "entry_type" : "entry_kind"}
-          required
-          defaultValue=""
-          disabled={!selectedAction}
-        >
-          <option value="">Selecione</option>
-          {serviceEntryTypes.map((type) => (
-            <option key={type.key} value={type.key}>
-              {type.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Data do atendimento
-        <input
-          name="serviced_at"
-          type="datetime-local"
-          required
-          disabled={!selectedAction}
-        />
-      </label>
+      {!isCompletion && (
+        <>
+          <label>
+            Tipo do registro
+            <select
+              name={isFormalEntry ? "entry_type" : "entry_kind"}
+              required
+              defaultValue=""
+              disabled={!selectedAction}
+            >
+              <option value="">Selecione</option>
+              {recordTypes.map((type) => (
+                <option key={type.key} value={type.key}>
+                  {type.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Data do atendimento
+            <input
+              name="serviced_at"
+              type="datetime-local"
+              required
+              disabled={!selectedAction}
+            />
+          </label>
+        </>
+      )}
       {selectedAction === "RESOLVE" && (
         <label className="span-2">
           Registro a resolver
@@ -104,13 +125,13 @@ export function OrderServiceForm({
         </label>
       )}
       <label className="span-2">
-        Descrição
+        {isCompletion ? "Resumo do serviço executado" : "Descrição"}
         <textarea
-          name="description"
+          name={isCompletion ? "service_summary" : "description"}
           required
           minLength={workflowLimits.solutionMin}
           maxLength={
-            isFormalEntry
+            isFormalEntry || isCompletion
               ? workflowLimits.solutionMax
               : workflowLimits.justificationMax
           }
@@ -118,9 +139,35 @@ export function OrderServiceForm({
           disabled={!selectedAction}
         />
       </label>
+      {isCompletion && (
+        <>
+          <label className="span-2">
+            Solução / providência adotada
+            <textarea
+              name="solution"
+              required
+              minLength={workflowLimits.solutionMin}
+              maxLength={workflowLimits.solutionMax}
+              rows={4}
+            />
+          </label>
+          <label className="span-2">
+            Observações finais
+            <textarea
+              name="final_notes"
+              maxLength={workflowLimits.solutionMax}
+              rows={3}
+            />
+          </label>
+          <p className="muted span-2">
+            A confirmação registra o encerramento e conclui a OS. A data e a
+            hora são registradas pelo sistema.
+          </p>
+        </>
+      )}
       <div>
         <ActionSubmitButton disabled={!selectedAction}>
-          Registrar atendimento
+          {isCompletion ? "Encerrar atendimento" : "Registrar atendimento"}
         </ActionSubmitButton>
       </div>
     </form>
