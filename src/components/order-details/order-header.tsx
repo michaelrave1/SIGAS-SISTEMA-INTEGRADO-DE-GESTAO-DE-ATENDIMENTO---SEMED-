@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui";
+import { Badge, PriorityBadge } from "@/components/ui";
 import {
   canonicalOrderStatusNames,
   formatOrderProtocol,
@@ -29,7 +29,7 @@ export function OrderHeader({
           </div>
           <div className="order-header-badges">
             <Badge status={order.status} />
-            <span className="badge">Prioridade {order.priority}</span>
+            <PriorityBadge priority={order.priority} showLabel />
           </div>
         </div>
         <dl className="order-header-meta">

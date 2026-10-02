@@ -4,7 +4,7 @@ import {
   OrderFilters,
   type OrderFilterOption,
 } from "@/components/order-filters";
-import { Badge, Heading, date } from "@/components/ui";
+import { Badge, Heading, PriorityBadge, date } from "@/components/ui";
 import { queryLimits } from "@/lib/application-config";
 import { formatOrderProtocol } from "@/lib/domain";
 import { ensureQueriesSucceeded, ensureQuerySucceeded } from "@/lib/errors";
@@ -124,7 +124,9 @@ export default async function Orders({
                 <td>
                   <Badge status={order.status} />
                 </td>
-                <td>{order.priority}</td>
+                <td>
+                  <PriorityBadge priority={order.priority} />
+                </td>
                 <td>{date(order.created_at)}</td>
                 <td>
                   <Link href={`/ordens/${order.id}`}>Ver detalhes →</Link>

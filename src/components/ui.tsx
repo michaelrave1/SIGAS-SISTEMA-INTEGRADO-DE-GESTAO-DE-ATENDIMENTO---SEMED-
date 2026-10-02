@@ -40,6 +40,26 @@ export function Badge({ status }: { status: string }) {
     </span>
   );
 }
+const priorityBadgeClasses: Record<string, string> = {
+  Baixa: "",
+  Normal: "success",
+  Alta: "warning",
+  Urgente: "danger",
+};
+
+export function PriorityBadge({
+  priority,
+  showLabel = false,
+}: {
+  priority: string;
+  showLabel?: boolean;
+}) {
+  return (
+    <span className={`badge ${priorityBadgeClasses[priority] ?? ""}`}>
+      {showLabel ? `Prioridade ${priority}` : priority}
+    </span>
+  );
+}
 export function Pagination({
   page,
   total,
