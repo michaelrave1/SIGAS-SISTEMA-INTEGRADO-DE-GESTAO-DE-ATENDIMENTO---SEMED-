@@ -1,3 +1,4 @@
+import { catalogManagementScope } from "@/lib/catalog-management";
 import { ClassificationFields } from "@/components/classification-fields";
 import {
   deleteSystemCatalog,
@@ -39,22 +40,29 @@ export default async function CatalogPage({
   const page = pageNumber(p.page);
   const range = pageRange(page);
   const { db, admin } = await session();
-  if (!admin) redirect("/sem-acesso");
+  const management = await catalogManagementScope(db);
+  if (!management.kinds.includes(kind)) redirect("/sem-acesso");
   await requirePagePermission(catalogPermission(kind, "view"), db);
   const permissions = await getUserPermissions(db);
-  const canCreate =
-    admin && permissionSetHas(permissions, catalogPermission(kind, "create"));
-  const canUpdate =
-    admin && permissionSetHas(permissions, catalogPermission(kind, "update"));
+  const canCreate = permissionSetHas(
+    permissions,
+    catalogPermission(kind, "create"),
+  );
+  const canUpdate = permissionSetHas(
+    permissions,
+    catalogPermission(kind, "update"),
+  );
   const classifications: Catalog[] = [];
   if (kind === "logistics") {
     for (let offset = 0; ; offset += 1000) {
-      const batch = await db
+      let batchQuery = db
         .from("os_catalogs")
         .select("id,legacy_id,kind,name,data,active")
         .eq("kind", "logistics")
         .order("id")
         .range(offset, offset + 999);
+      if (!admin) batchQuery = batchQuery.in("data->>area", management.areas);
+      const batch = await batchQuery;
       ensureQuerySucceeded(batch, "Falha ao consultar hierarquia");
       classifications.push(...(batch.data ?? []));
       if ((batch.data?.length ?? 0) < 1000) break;
@@ -96,6 +104,8 @@ export default async function CatalogPage({
     .eq("kind", kind)
     .order("name")
     .range(range.from, range.to);
+  if (!admin && kind === "logistics")
+    query = query.in("data->>area", management.areas);
   if (kind === "logistics")
     for (const key of ["area", "nature", "type"] as const)
       if (p[key]) query = query.eq(`data->>${key}`, p[key]!);
@@ -113,6 +123,13 @@ export default async function CatalogPage({
       : null;
   if (edit) ensureQuerySucceeded(edit, "Cadastro indisponível");
   const item = edit?.data as Catalog | undefined;
+  if (
+    !admin &&
+    item &&
+    kind === "logistics" &&
+    !management.areas.includes(item.data.area ?? "")
+  )
+    redirect("/sem-acesso");
   return (
     <>
       <Heading
@@ -123,7 +140,9 @@ export default async function CatalogPage({
         }
         description="Cadastros de apoio às ordens de serviço."
       />
-      <Link href="/administracao/cadastros">Cadastros do Sistema</Link>
+      {admin && (
+        <Link href="/administracao/cadastros">Cadastros do Sistema</Link>
+      )}
       {p.erro === "referenced" ? (
         <p role="alert">
           Este cadastro possui histórico ou vínculos. Desative-o em vez de
@@ -247,9 +266,10 @@ export default async function CatalogPage({
             {kind === "logistics" ? (
               <ClassificationFields
                 editing={Boolean(item)}
+                allowedAreas={admin ? undefined : management.areas}
                 initial={
                   item?.data ?? {
-                    area: p.area ?? "",
+                    area: p.area ?? (!admin ? (management.areas[0] ?? "") : ""),
                     nature: p.nature ?? "",
                     type: p.type ?? "",
                   }

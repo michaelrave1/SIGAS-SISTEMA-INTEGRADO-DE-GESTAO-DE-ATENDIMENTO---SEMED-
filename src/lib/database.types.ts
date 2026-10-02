@@ -185,6 +185,10 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      os_catalog_management_scope: {
+        Args: Record<string, never>;
+        Returns: Json;
+      };
       os_pending_acknowledgements: {
         Args: Record<string, never>;
         Returns: Json;

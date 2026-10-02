@@ -14,10 +14,12 @@ export function ClassificationFields({
   initial,
   rows,
   editing,
+  allowedAreas,
 }: {
   initial: CatalogData;
   rows: CatalogData[];
   editing: boolean;
+  allowedAreas?: string[];
 }) {
   const [values, setValues] = useState(initial);
   return (
@@ -47,29 +49,46 @@ export function ClassificationFields({
         return (
           <label key={key}>
             {label}
-            <input
-              name={key}
-              list={`classification-${key}`}
-              value={values[key] ?? ""}
-              maxLength={fieldLimits.catalogValue}
-              required={key === "area"}
-              readOnly={key === "area" && editing}
-              disabled={index > 0 && !values[fields[Math.min(index - 1, 2)][0]]}
-              onChange={(event) =>
-                setValues((current) => ({
-                  ...current,
-                  ...Object.fromEntries(
-                    (index < 3 ? fields.slice(index + 1) : []).map(
-                      ([child]) => [child, ""],
+            {key === "area" && allowedAreas && !editing ? (
+              <select
+                name="area"
+                required
+                value={values.area ?? ""}
+                onChange={(event) => setValues({ area: event.target.value })}
+              >
+                {allowedAreas.map((area) => (
+                  <option key={area} value={area}>
+                    {area}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                name={key}
+                list={`classification-${key}`}
+                value={values[key] ?? ""}
+                maxLength={fieldLimits.catalogValue}
+                required={key === "area"}
+                readOnly={key === "area" && editing}
+                disabled={
+                  index > 0 && !values[fields[Math.min(index - 1, 2)][0]]
+                }
+                onChange={(event) =>
+                  setValues((current) => ({
+                    ...current,
+                    ...Object.fromEntries(
+                      (index < 3 ? fields.slice(index + 1) : []).map(
+                        ([child]) => [child, ""],
+                      ),
                     ),
-                  ),
-                  [key]:
-                    key === "area"
-                      ? event.target.value.toLocaleUpperCase("pt-BR")
-                      : event.target.value,
-                }))
-              }
-            />
+                    [key]:
+                      key === "area"
+                        ? event.target.value.toLocaleUpperCase("pt-BR")
+                        : event.target.value,
+                  }))
+                }
+              />
+            )}
             {index > 0 && !values[fields[Math.min(index - 1, 2)][0]] && (
               <input type="hidden" name={key} value={values[key] ?? ""} />
             )}

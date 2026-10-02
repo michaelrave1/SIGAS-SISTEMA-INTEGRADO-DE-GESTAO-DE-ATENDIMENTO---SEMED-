@@ -121,11 +121,15 @@ export const navigationItems: readonly NavigationItem[] = [
 export function visibleNavigationItems(
   permissions: ReadonlySet<PermissionKey>,
   administrator: boolean,
+  managedCatalogKinds: readonly string[] = [],
 ) {
   return navigationItems.filter(
     (item) =>
       permissions.has(item.permission) &&
-      (!item.requiresAdministrator || administrator),
+      (!item.requiresAdministrator ||
+        administrator ||
+        (["logistics", "routes", "vehicles", "drivers"].includes(item.id) &&
+          managedCatalogKinds.includes(item.id))),
   );
 }
 

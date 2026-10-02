@@ -13,8 +13,7 @@ import {
 
 const typesPath = "/administracao/cadastros/atendimentos";
 export async function setCatalogActive(form: FormData) {
-  const { db, admin } = await session();
-  requireAdministrator(admin);
+  const { db } = await session();
   const kind = formText(form, "kind");
   if (!isCatalogKind(kind)) throw new Error("Cadastro inválido");
   const path = `/cadastros/${kind}`;
@@ -80,10 +79,10 @@ export async function saveServiceEntryType(form: FormData) {
 
 export async function deleteSystemCatalog(form: FormData) {
   const { db, admin } = await session();
-  requireAdministrator(admin);
   const kind = formText(form, "kind");
   const isType = kind === "service_type";
   const isUnit = kind === "units";
+  if (isType || isUnit) requireAdministrator(admin);
   if (!isType && !isUnit && !isCatalogKind(kind))
     throw new Error("Cadastro inválido");
   const path = isType ? typesPath : isUnit ? "/unidades" : `/cadastros/${kind}`;

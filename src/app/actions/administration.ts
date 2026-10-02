@@ -32,8 +32,7 @@ import {
 } from "@/lib/professional-identity";
 
 export async function saveCatalog(form: FormData) {
-  const { db, admin } = await session();
-  requireAdministrator(admin);
+  const { db } = await session();
   const kind = formText(form, "kind");
   if (!Object.hasOwn(catalogFields, kind)) throw new Error("Cadastro inválido");
   const catalogKind = kind as keyof typeof catalogFields;
@@ -45,19 +44,36 @@ export async function saveCatalog(form: FormData) {
     `/cadastros/${catalogKind}`,
     "save_catalog",
   );
-  const name = z.string().trim().min(1).max(fieldLimits.catalogName).parse(formText(form, "name"));
-  const current = id ? await db.from("os_catalogs").select("data").eq("id", id).eq("kind", catalogKind).single() : null;
+  const name = z
+    .string()
+    .trim()
+    .min(1)
+    .max(fieldLimits.catalogName)
+    .parse(formText(form, "name"));
+  const current = id
+    ? await db
+        .from("os_catalogs")
+        .select("data")
+        .eq("id", id)
+        .eq("kind", catalogKind)
+        .single()
+    : null;
   if (current?.error) return actionFailed(`/cadastros/${catalogKind}`);
   const data: CatalogData = { ...current?.data?.data };
   for (const [key] of catalogFields[catalogKind].fields) {
-    const value = z.string().trim().max(fieldLimits.catalogValue).parse(formText(form, key));
+    const value = z
+      .string()
+      .trim()
+      .max(fieldLimits.catalogValue)
+      .parse(formText(form, key));
     if (value || Object.hasOwn(data, key)) data[key] = value;
   }
   if (catalogKind === "logistics" && data.area)
     data.area = normalizeAreaName(data.area);
   if (data.link) {
     const url = z.url().parse(data.link);
-    if (!["https:", "http:"].includes(new URL(url).protocol)) return actionFailed(`/cadastros/${catalogKind}`);
+    if (!["https:", "http:"].includes(new URL(url).protocol))
+      return actionFailed(`/cadastros/${catalogKind}`);
   }
   const { error } = await db.rpc("os_save_catalog", {
     target: id || null,
@@ -67,8 +83,12 @@ export async function saveCatalog(form: FormData) {
     catalog_active: form.get("active") === "on",
   });
   if (error) {
-    if (error.code === "23503") redirect(`/cadastros/${catalogKind}?erro=referenced`);
-    return actionFailed(`/cadastros/${catalogKind}`, error.code === "23514" ? "validation" : "unexpected");
+    if (error.code === "23503")
+      redirect(`/cadastros/${catalogKind}?erro=referenced`);
+    return actionFailed(
+      `/cadastros/${catalogKind}`,
+      error.code === "23514" ? "validation" : "unexpected",
+    );
   }
   revalidatePath(`/cadastros/${catalogKind}`);
   redirect(`/cadastros/${catalogKind}`);
@@ -87,12 +107,14 @@ export async function saveUnit(form: FormData) {
     "/unidades",
     "save_unit",
   );
-  const input = z.object({
-    name: z.string().trim().min(1).max(fieldLimits.unitName),
-    type: z.string().max(fieldLimits.unitType),
-    address: z.string().max(fieldLimits.unitAddress),
-    coordinates: z.string().max(fieldLimits.coordinates),
-  }).parse(Object.fromEntries(form));
+  const input = z
+    .object({
+      name: z.string().trim().min(1).max(fieldLimits.unitName),
+      type: z.string().max(fieldLimits.unitType),
+      address: z.string().max(fieldLimits.unitAddress),
+      coordinates: z.string().max(fieldLimits.coordinates),
+    })
+    .parse(Object.fromEntries(form));
   const { error } = await db.rpc("os_save_unit", {
     target: id || null,
     unit_name: input.name,
@@ -119,20 +141,26 @@ export async function saveMembership(form: FormData) {
   const role = z.enum(roles).parse(formText(form, "role"));
   const unit = formText(form, "unit_id");
   if (unit) z.uuid().parse(unit);
-  if (
-    !unit &&
-    role !== roleNames.administrator &&
-    role !== roleNames.manager
-  )
+  if (!unit && role !== roleNames.administrator && role !== roleNames.manager)
     return actionFailed("/usuarios");
-  if (unit && role === roleNames.administrator) return actionFailed("/usuarios");
-  const name = z.string().trim().min(1).max(fieldLimits.profileName).parse(formText(form, "name"));
+  if (unit && role === roleNames.administrator)
+    return actionFailed("/usuarios");
+  const name = z
+    .string()
+    .trim()
+    .min(1)
+    .max(fieldLimits.profileName)
+    .parse(formText(form, "name"));
   const active = form.get("active") === "on";
   if (userId === user.id && !active) return actionFailed("/usuarios");
   const id = formText(form, "id");
   if (id) z.uuid().parse(id);
   const current = id
-    ? await db.from("os_memberships").select("id,user_id,role").eq("id", id).single()
+    ? await db
+        .from("os_memberships")
+        .select("id,user_id,role")
+        .eq("id", id)
+        .single()
     : null;
   if (current?.error) return actionFailed("/usuarios");
 
@@ -144,18 +172,27 @@ export async function saveMembership(form: FormData) {
       ({ error } = await db.rpc("os_revoke_admin", { target: id }));
     } else {
       ({ error } = await db.rpc("os_grant_admin", {
-        target_user: userId, target_name: name, replaced_membership: id || null,
+        target_user: userId,
+        target_name: name,
+        replaced_membership: id || null,
       }));
     }
   } else if (current?.data.role === roleNames.administrator) {
     ({ error } = await db.rpc("os_reclassify_admin", {
-      target: id, target_unit: unit || null, target_role: role,
-      target_active: active, target_name: name,
+      target: id,
+      target_unit: unit || null,
+      target_role: role,
+      target_active: active,
+      target_name: name,
     }));
   } else {
     ({ error } = await db.rpc("os_save_membership", {
-      target: id || null, target_user: userId, target_unit: unit || null,
-      target_role: role, target_active: active, target_name: name,
+      target: id || null,
+      target_user: userId,
+      target_unit: unit || null,
+      target_role: role,
+      target_active: active,
+      target_name: name,
     }));
   }
   if (error) return actionFailed("/usuarios");
@@ -172,11 +209,13 @@ export async function saveProfessionalMembership(form: FormData) {
     professional_id: formText(form, "professional_id"),
     area: formText(form, "area"),
   });
-  if (!input.success) return actionFailed("/usuarios", "validation", "save_professional");
+  if (!input.success)
+    return actionFailed("/usuarios", "validation", "save_professional");
   if (
     input.data.email &&
     !isAllowedGoogleEmail(input.data.email, allowedGoogleDomains())
-  ) return actionFailed("/usuarios", "validation", "save_professional_domain");
+  )
+    return actionFailed("/usuarios", "validation", "save_professional_domain");
 
   const currentMembership = input.data.id
     ? await db
@@ -228,8 +267,11 @@ export async function saveProfessionalMembership(form: FormData) {
   if (error) {
     const status = classifyProfessionalError(error);
     logServerEvent("warn", "professional_save_failed", {
-      requestId: await currentRequestId(), route: "/usuarios",
-      operation: "save_professional", status, error,
+      requestId: await currentRequestId(),
+      route: "/usuarios",
+      operation: "save_professional",
+      status,
+      error,
     });
     return actionFailed("/usuarios", status, "save_professional");
   }
@@ -275,19 +317,33 @@ export async function prepareProfessionalIdentityChange(form: FormData) {
     "/usuarios",
     "change_professional_identity",
   );
-  const input = z.object({
-    professional_id: z.uuid(),
-    new_email: z.email().max(fieldLimits.email).transform(normalizeInstitutionalEmail),
-    justification: z.string().trim().min(10).max(500),
-  }).safeParse(Object.fromEntries(form));
+  const input = z
+    .object({
+      professional_id: z.uuid(),
+      new_email: z
+        .email()
+        .max(fieldLimits.email)
+        .transform(normalizeInstitutionalEmail),
+      justification: z.string().trim().min(10).max(500),
+    })
+    .safeParse(Object.fromEntries(form));
   if (!input.success || !isAllowedGoogleEmail(input.data.new_email))
-    return actionFailed("/usuarios", "validation", "change_professional_identity");
+    return actionFailed(
+      "/usuarios",
+      "validation",
+      "change_professional_identity",
+    );
   const { error } = await db.rpc("os_prepare_professional_identity_change", {
     target_professional: input.data.professional_id,
     new_email: input.data.new_email,
     justification: input.data.justification,
   });
-  if (error) return actionFailed("/usuarios", "unexpected", "change_professional_identity");
+  if (error)
+    return actionFailed(
+      "/usuarios",
+      "unexpected",
+      "change_professional_identity",
+    );
   revalidatePath("/usuarios");
   redirect("/usuarios");
 }
@@ -301,17 +357,28 @@ export async function restoreProfessionalIdentity(form: FormData) {
     "/usuarios",
     "restore_professional_identity",
   );
-  const input = z.object({
-    professional_id: z.uuid(),
-    justification: z.string().trim().min(10).max(500),
-  }).safeParse(Object.fromEntries(form));
+  const input = z
+    .object({
+      professional_id: z.uuid(),
+      justification: z.string().trim().min(10).max(500),
+    })
+    .safeParse(Object.fromEntries(form));
   if (!input.success)
-    return actionFailed("/usuarios", "validation", "restore_professional_identity");
+    return actionFailed(
+      "/usuarios",
+      "validation",
+      "restore_professional_identity",
+    );
   const { error } = await db.rpc("os_restore_professional_identity", {
     target_professional: input.data.professional_id,
     justification: input.data.justification,
   });
-  if (error) return actionFailed("/usuarios", "unexpected", "restore_professional_identity");
+  if (error)
+    return actionFailed(
+      "/usuarios",
+      "unexpected",
+      "restore_professional_identity",
+    );
   revalidatePath("/usuarios");
   redirect("/usuarios");
 }

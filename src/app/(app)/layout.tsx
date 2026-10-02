@@ -1,3 +1,4 @@
+import { catalogManagementScope } from "@/lib/catalog-management";
 import { session } from "@/lib/session";
 import { Shell } from "@/components/shell";
 import { getUserPermissions } from "@/lib/authorization";
@@ -11,12 +12,14 @@ export default async function AppLayout({
 }) {
   const { user, admin, db } = await session();
   const permissions = await getUserPermissions(db);
+  const catalogScope = await catalogManagementScope(db);
   const acknowledgements = await pendingAcknowledgements();
   return (
     <AcknowledgementGate initial={acknowledgements}>
       <Shell
         name={user.email ?? "Conta institucional"}
         admin={admin}
+        managedCatalogKinds={catalogScope.kinds}
         permissions={[...permissions]}
       >
         {children}

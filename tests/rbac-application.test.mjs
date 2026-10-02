@@ -134,7 +134,7 @@ test("componentes ocultam controles usando o contrato central", async () => {
   );
 
   assert.match(layout, /permissions=\{\[\.\.\.permissions\]\}/);
-  assert.match(shell, /visibleNavigationItems\(new Set\(permissions\), admin\)/);
+  assert.match(shell, /visibleNavigationItems\([\s\S]*?new Set\(permissions\),[\s\S]*?admin,[\s\S]*?managedCatalogKinds/);
   assert.match(units, /administrationActionPermissions\.CREATE_UNIT/);
   assert.match(units, /administrationActionPermissions\.UPDATE_UNIT/);
   assert.match(catalogs, /catalogPermission\(kind, "create"\)/);
@@ -171,7 +171,7 @@ test("rotas privadas recusam acesso direto por permissão no servidor", async ()
   );
   assert.match(
     await read("src/app/(app)/cadastros/[kind]/page.tsx"),
-    /if \(!admin\) redirect\("\/sem-acesso"\)/,
+    /if \(!management.kinds.includes\(kind\)\) redirect\("\/sem-acesso"\)/,
   );
   assert.match(
     await read("src/app/anexos/[id]/route.ts"),

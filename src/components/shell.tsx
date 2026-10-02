@@ -43,15 +43,21 @@ export function Shell({
   name,
   admin,
   permissions,
+  managedCatalogKinds = [],
 }: {
   children: React.ReactNode;
   name: string;
   admin: boolean;
   permissions: PermissionKey[];
+  managedCatalogKinds?: string[];
 }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
-  const visible = visibleNavigationItems(new Set(permissions), admin);
+  const visible = visibleNavigationItems(
+    new Set(permissions),
+    admin,
+    managedCatalogKinds,
+  );
   const mainLinks = visible.filter((item) => item.section === "main");
   const catalogLinks = visible.filter((item) => item.section === "catalogs");
   const administrationLinks = visible.filter(
