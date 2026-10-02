@@ -1,3 +1,4 @@
+import { ActionSubmitButton } from "@/components/action-submit-button";
 import {
   acceptAssignment,
   assignOrder,
@@ -104,7 +105,7 @@ export function OrderWorkflowActions({
               </select>
             </label>
             <div>
-              <button>Conciliar e iniciar triagem</button>
+              <ActionSubmitButton>Conciliar e iniciar triagem</ActionSubmitButton>
             </div>
           </form>
         )}
@@ -112,7 +113,7 @@ export function OrderWorkflowActions({
         {available.has(workflowActionNames.triage) && (
           <form action={startTriage}>
             {versionFields}
-            <button>Iniciar triagem</button>
+            <ActionSubmitButton>Iniciar triagem</ActionSubmitButton>
           </form>
         )}
 
@@ -134,7 +135,7 @@ export function OrderWorkflowActions({
                 ))}
               </select>
             </label>
-            <button>Encaminhar ao profissional</button>
+            <ActionSubmitButton>Encaminhar ao profissional</ActionSubmitButton>
           </form>
         )}
 
@@ -144,7 +145,7 @@ export function OrderWorkflowActions({
             <p className="muted">
               Confirme que você assumirá a responsabilidade pelo atendimento.
             </p>
-            <button>Aceitar atribuição</button>
+            <ActionSubmitButton>Aceitar atribuição</ActionSubmitButton>
           </form>
         )}
 
@@ -175,14 +176,14 @@ export function OrderWorkflowActions({
                 maxLength={workflowLimits.justificationMax}
               />
             </label>
-            <button>Reatribuir responsável</button>
+            <ActionSubmitButton>Reatribuir responsável</ActionSubmitButton>
           </form>
         )}
 
         {available.has(workflowActionNames.startService) && (
           <form action={startService}>
             {versionFields}
-            <button>Iniciar atendimento</button>
+            <ActionSubmitButton>Iniciar atendimento</ActionSubmitButton>
           </form>
         )}
 
@@ -209,14 +210,14 @@ export function OrderWorkflowActions({
                 maxLength={workflowLimits.justificationMax}
               />
             </label>
-            <button>Aguardar informação</button>
+            <ActionSubmitButton>Aguardar informação</ActionSubmitButton>
           </form>
         )}
 
         {available.has(workflowActionNames.resume) && (
           <form action={resumeService}>
             {versionFields}
-            <button>Retomar fluxo</button>
+            <ActionSubmitButton>Retomar fluxo</ActionSubmitButton>
           </form>
         )}
 
@@ -224,7 +225,7 @@ export function OrderWorkflowActions({
           <form action={completeOrder}>
             {versionFields}
             <label>
-              Solução aplicada
+              Solução / providência adotada
               <textarea
                 name="solution"
                 required
@@ -233,7 +234,9 @@ export function OrderWorkflowActions({
                 rows={4}
               />
             </label>
-            <button>Concluir ordem</button>
+            <label>Resumo do serviço executado<textarea name="service_summary" required minLength={3} maxLength={5000} rows={4} /></label>
+            <label>Observações finais<textarea name="final_notes" maxLength={5000} rows={3} /></label>
+            <ActionSubmitButton>Concluir ordem</ActionSubmitButton>
           </form>
         )}
 
@@ -249,7 +252,7 @@ export function OrderWorkflowActions({
                 maxLength={workflowLimits.justificationMax}
               />
             </label>
-            <button>Cancelar ordem</button>
+            <ActionSubmitButton>Cancelar ordem</ActionSubmitButton>
           </form>
         )}
 
@@ -265,7 +268,7 @@ export function OrderWorkflowActions({
                 maxLength={workflowLimits.justificationMax}
               />
             </label>
-            <button>Reabrir ordem</button>
+            <ActionSubmitButton>Reabrir ordem</ActionSubmitButton>
           </form>
         )}
       </div>

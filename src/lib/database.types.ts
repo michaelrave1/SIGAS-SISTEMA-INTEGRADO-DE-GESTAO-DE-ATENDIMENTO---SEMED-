@@ -90,6 +90,8 @@ export type OrderEvent = {
   created_at: string;
 };
 export type OrderServiceEntry = {
+  operational_kind: string | null;
+  related_entry_id: number | null;
   id: number;
   order_id: string;
   author_id: string | null;
@@ -314,8 +316,20 @@ export type Database = {
         Args: { target: string; next_status: string; reason: string };
         Returns: undefined;
       };
+      os_service_operation: {
+        Args: { target: string; expected_version: number; service_action: string; description: string; entry_kind: string; related_entry?: number | null; material_status?: string | null };
+        Returns: number;
+      };
+      os_order_open_service_issues: {
+        Args: { target: string };
+        Returns: { id: number; description: string; operational_kind: string }[];
+      };
+      os_add_message: {
+        Args: { target: string; message_body: string; submission_id: string };
+        Returns: string;
+      };
       os_complete_order: {
-        Args: { target: string; expected_version: number; solution: string };
+        Args: { target: string; expected_version: number; solution: string; service_summary: string; final_notes: string };
         Returns: undefined;
       };
       os_cancel_order: {

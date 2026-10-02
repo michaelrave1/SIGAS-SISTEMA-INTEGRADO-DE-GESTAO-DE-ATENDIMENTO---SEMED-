@@ -154,7 +154,7 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
       (
         await asUser(
           ids.admin,
-          `select operation from os_order_available_actions('${order}')`,
+          `select operation from os_order_available_actions('${order}') where operation not in('IMPEDIMENT','PENDING','RESOLVE','REQUEST_INFORMATION','REQUEST_FORWARDING','OPERATIONAL_UPDATE','RETURN_TRIAGE')`,
         )
       ).rows,
       [
@@ -167,7 +167,7 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
       (
         await asUser(
           ids.requester,
-          `select operation from os_order_available_actions('${order}')`,
+          `select operation from os_order_available_actions('${order}') where operation not in('IMPEDIMENT','PENDING','RESOLVE','REQUEST_INFORMATION','REQUEST_FORWARDING','OPERATIONAL_UPDATE','RETURN_TRIAGE')`,
         )
       ).rows,
       [],
@@ -199,7 +199,7 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
       (
         await asUser(
           ids.admin,
-          `select operation from os_order_available_actions('${order}')`,
+          `select operation from os_order_available_actions('${order}') where operation not in('IMPEDIMENT','PENDING','RESOLVE','REQUEST_INFORMATION','REQUEST_FORWARDING','OPERATIONAL_UPDATE','RETURN_TRIAGE')`,
         )
       ).rows,
       [
@@ -223,11 +223,12 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
       ids.areaManager,
       `select os_assign_order('${order}',2,'${tech1Membership}')`,
     );
+    await asUser(ids.tech1, `select os_acknowledge_dispatch(id) from os_order_dispatches where os_id='${order}' and ciente_em is null`);
     assert.deepEqual(
       (
         await asUser(
           ids.tech1,
-          `select operation from os_order_available_actions('${order}')`,
+          `select operation from os_order_available_actions('${order}') where operation not in('IMPEDIMENT','PENDING','RESOLVE','REQUEST_INFORMATION','REQUEST_FORWARDING','OPERATIONAL_UPDATE','RETURN_TRIAGE')`,
         )
       ).rows,
       [
@@ -238,7 +239,7 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
       (
         await asUser(
           ids.admin,
-          `select operation from os_order_available_actions('${order}')`,
+          `select operation from os_order_available_actions('${order}') where operation not in('IMPEDIMENT','PENDING','RESOLVE','REQUEST_INFORMATION','REQUEST_FORWARDING','OPERATIONAL_UPDATE','RETURN_TRIAGE')`,
         )
       ).rows,
       [
@@ -273,11 +274,12 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
         version: 5,
       }],
     );
+    await asUser(ids.tech2, `select os_acknowledge_dispatch(id) from os_order_dispatches where os_id='${order}' and ciente_em is null`);
     assert.deepEqual(
       (
         await asUser(
           ids.tech2,
-          `select operation from os_order_available_actions('${order}')`,
+          `select operation from os_order_available_actions('${order}') where operation not in('IMPEDIMENT','PENDING','RESOLVE','REQUEST_INFORMATION','REQUEST_FORWARDING','OPERATIONAL_UPDATE','RETURN_TRIAGE')`,
         )
       ).rows,
       [{ operation: "ACCEPT_ASSIGNMENT" }],
@@ -288,7 +290,7 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
       (
         await asUser(
           ids.tech2,
-          `select operation from os_order_available_actions('${order}')`,
+          `select operation from os_order_available_actions('${order}') where operation not in('IMPEDIMENT','PENDING','RESOLVE','REQUEST_INFORMATION','REQUEST_FORWARDING','OPERATIONAL_UPDATE','RETURN_TRIAGE')`,
         )
       ).rows,
       [
@@ -318,7 +320,7 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
       (
         await asUser(
           ids.tech2,
-          `select operation from os_order_available_actions('${order}')`,
+          `select operation from os_order_available_actions('${order}') where operation not in('IMPEDIMENT','PENDING','RESOLVE','REQUEST_INFORMATION','REQUEST_FORWARDING','OPERATIONAL_UPDATE','RETURN_TRIAGE')`,
         )
       ).rows,
       [
@@ -338,7 +340,7 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
       (
         await asUser(
           ids.tech2,
-          `select operation from os_order_available_actions('${order}')`,
+          `select operation from os_order_available_actions('${order}') where operation not in('IMPEDIMENT','PENDING','RESOLVE','REQUEST_INFORMATION','REQUEST_FORWARDING','OPERATIONAL_UPDATE','RETURN_TRIAGE')`,
         )
       ).rows,
       [{ operation: "RESUME" }, { operation: "CANCEL" }],
@@ -365,13 +367,13 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
     await asUser(ids.tech2, `select os_resume_service('${order}',9)`);
     await asUser(
       ids.tech2,
-      `select os_complete_order('${order}',10,'Equipamento normalizado')`,
+      `select os_complete_order('${order}',10,'Equipamento normalizado','Diagnóstico e reparo executados','')`,
     );
     assert.deepEqual(
       (
         await asUser(
           ids.tech2,
-          `select operation from os_order_available_actions('${order}')`,
+          `select operation from os_order_available_actions('${order}') where operation not in('IMPEDIMENT','PENDING','RESOLVE','REQUEST_INFORMATION','REQUEST_FORWARDING','OPERATIONAL_UPDATE','RETURN_TRIAGE')`,
         )
       ).rows,
       [{ operation: "REOPEN" }],
@@ -444,7 +446,7 @@ test("operações canônicas validam estado, autorização, versão e atomicidad
       [{ active: false, version: 15 }]);
     assert.equal((await asUser(ids.admin, `select id from os_orders where id='${order}'`)).rows.length, 0);
     assert.equal((await db.query(`select id from os_audit where record_id='${order}' and action='DELETE'`)).rows.length, 1);
-    assert.equal(Number((await db.query(`select count(*) as n from os_order_events where order_id='${order}'`)).rows[0].n), 14);
+    assert.equal(Number((await db.query(`select count(*) as n from os_order_events where order_id='${order}'`)).rows[0].n), 18);
     await assert.rejects(asUser(ids.admin, `select os_delete_order('${order}',15)`), /não encontrada/);
   } finally {
     await db.close();

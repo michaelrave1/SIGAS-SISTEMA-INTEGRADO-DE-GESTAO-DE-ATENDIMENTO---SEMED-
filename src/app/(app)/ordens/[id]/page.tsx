@@ -42,7 +42,7 @@ export default async function OrderPage({
   const { data, error } = await db
     .from("os_orders")
     .select(
-      "id,protocol,protocol_year,protocol_code,version,title,status,priority,resolution,unit_id,destination_unit_id,opened_by,responsible_id,category_id,driver_id,vehicle_id,route_id,details,opened_at,resume_status,waiting_reason,waiting_details",
+      "id,protocol,protocol_year,protocol_code,version,title,status,priority,resolution,service_summary,final_observations,unit_id,destination_unit_id,opened_by,responsible_id,category_id,driver_id,vehicle_id,route_id,details,opened_at,resume_status,waiting_reason,waiting_details",
     )
     .eq("id", id)
     .maybeSingle();
@@ -109,7 +109,7 @@ export default async function OrderPage({
     db
       .from("os_order_service_entries")
       .select(
-        "id,entry_type,entry_type_name,description,serviced_at,created_at",
+        "id,entry_type,entry_type_name,description,serviced_at,created_at,operational_kind,related_entry_id",
       )
       .eq("order_id", id)
       .order("serviced_at", { ascending: false })
@@ -184,6 +184,8 @@ export default async function OrderPage({
     }),
   );
   const workflowOperations = availableActions.data ?? [];
+  const openIssues = await db.rpc("os_order_open_service_issues", { target: id });
+  ensureQuerySucceeded(openIssues, "Falha ao consultar pendências do atendimento");
 
   return (
     <>
@@ -214,6 +216,8 @@ export default async function OrderPage({
         id={id}
         version={order.version}
         entries={serviceEntries.data ?? []}
+        openIssues={openIssues.data ?? []}
+        actions={workflowOperations}
         canAdd={workflowOperations.some(
           ({ operation }) => operation === workflowActionNames.addServiceEntry,
         )}

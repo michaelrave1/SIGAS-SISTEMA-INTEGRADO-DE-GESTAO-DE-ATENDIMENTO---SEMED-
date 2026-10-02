@@ -65,7 +65,7 @@ for (const upgrade of [false, true])
       grant select,insert on storage.objects to authenticated;
 `);
       for (const file of files)
-        if (file !== acknowledgementFile)
+        if (file < acknowledgementFile)
           await db.exec(await fs.readFile(new URL(file, directory), "utf8"));
       await db.exec(`
  insert into auth.users(id) values('${admin}'),('${requester}'),('${tech1}'),('${tech2}');
@@ -102,6 +102,8 @@ for (const upgrade of [false, true])
       await db.exec(
         await fs.readFile(new URL(acknowledgementFile, directory), "utf8"),
       );
+      for (const file of files.filter(name => name > acknowledgementFile))
+        await db.exec(await fs.readFile(new URL(file, directory), "utf8"));
       if (!upgrade) first = await forward();
       const one = await pending(tech1);
       assert.equal(one.length, 1);

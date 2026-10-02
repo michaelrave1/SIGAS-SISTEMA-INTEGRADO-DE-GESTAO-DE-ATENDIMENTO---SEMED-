@@ -146,6 +146,7 @@ test("RLS do novo fluxo separa origem, execução, autoria e dados internos", as
       assert.equal(actions.some(({operation}) => operation === 'ASSIGN' || operation === 'REASSIGN'), false);
       await assert.rejects(asUser(reader, `select * from os_order_responsible_options('${order}')`), /Acesso negado/);
     }
+    await asUser(users.assigned, `select os_acknowledge_dispatch(id) from os_order_dispatches where os_id='${order}' and ciente_em is null`);
     await asUser(users.assigned, `select os_start_service('${order}',4)`);
     const serviceEntry = (
       await asUser(

@@ -1,3 +1,4 @@
+import { ActionSubmitButton } from "@/components/action-submit-button";
 import { addMessage } from "@/app/actions";
 import { date } from "@/components/ui";
 import { fieldLimits, queryLimits } from "@/lib/application-config";
@@ -22,6 +23,7 @@ export function OrderActivity({
         {canPost && (
           <form action={addMessage}>
             <input type="hidden" name="id" value={id} />
+            <input type="hidden" name="request_id" value={crypto.randomUUID()} />
             <label>
               Nova mensagem
               <textarea
@@ -31,7 +33,7 @@ export function OrderActivity({
                 rows={3}
               />
             </label>
-            <button>Enviar mensagem</button>
+            <ActionSubmitButton>Enviar mensagem</ActionSubmitButton>
           </form>
         )}
         <div className="timeline">

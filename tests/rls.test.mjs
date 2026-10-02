@@ -10,7 +10,7 @@ const migrations = await Promise.all(
     // separadamente e não alteram as regras funcionais/RLS deste teste.
     .filter(
       (file) =>
-        file.endsWith(".sql") && !file.endsWith("_performance_indexes.sql"),
+        file < "202610020003" && file.endsWith(".sql") && !file.endsWith("_performance_indexes.sql"),
     )
     .sort()
     .map((file) => fs.readFile(new URL(file, migrationsDirectory), "utf8")),

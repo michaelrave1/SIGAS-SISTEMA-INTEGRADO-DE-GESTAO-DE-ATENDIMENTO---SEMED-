@@ -34,6 +34,8 @@ test("catálogo central associa cada operação protegida à permissão explíci
     CANCEL: "orders.cancel",
     REOPEN: "orders.reopen",
     EDIT: "orders.update",
+    SERVICE_OPERATION: "orders.attend",
+    RETURN_TRIAGE: "orders.return_triage",
     ADD_MESSAGE: "orders.view",
     UPLOAD_ATTACHMENT: "orders.view",
   });

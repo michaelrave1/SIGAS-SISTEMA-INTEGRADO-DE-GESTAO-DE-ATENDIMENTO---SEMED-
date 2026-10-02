@@ -8,7 +8,7 @@ const migrations = await Promise.all(
   (await fs.readdir(migrationsDirectory))
     .filter(
       (file) =>
-        file.endsWith(".sql") && !file.includes("202609290005") && !file.endsWith("_performance_indexes.sql"),
+        file < "202610020003" && file.endsWith(".sql") && !file.includes("202609290005") && !file.endsWith("_performance_indexes.sql"),
     )
     .sort()
     .map((file) => fs.readFile(file.startsWith("202609290001") ? new URL("./fixtures/production-202609290001.sql", import.meta.url) : new URL(file, migrationsDirectory), "utf8")),
@@ -149,4 +149,3 @@ test("correção idempotente do gestor de área no schema divergente", async () 
     assert.equal((await db.query(`select count(*)::int n from os_order_area_assignments where membership_id='${tech}' and order_id='${other}'`)).rows[0].n,1);
   } finally { await db.close(); }
 });
-

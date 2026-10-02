@@ -147,6 +147,13 @@ export const workflowActionNames = {
   cancel: "CANCEL",
   reopen: "REOPEN",
   edit: "EDIT",
+  impediment: "IMPEDIMENT",
+  pending: "PENDING",
+  resolve: "RESOLVE",
+  requestInformation: "REQUEST_INFORMATION",
+  requestForwarding: "REQUEST_FORWARDING",
+  operationalUpdate: "OPERATIONAL_UPDATE",
+  returnTriage: "RETURN_TRIAGE",
 } as const;
 export const workflowActions = Object.values(workflowActionNames);
 export type WorkflowAction = (typeof workflowActions)[number];
@@ -165,6 +172,15 @@ export type OrderTransition = {
 };
 
 export const allowedOrderTransitions = [
+  ...[
+    canonicalOrderStatusNames.assigned,
+    canonicalOrderStatusNames.inService,
+    canonicalOrderStatusNames.waitingInformation,
+  ].map((from): OrderTransition => ({
+    from,
+    to: canonicalOrderStatusNames.triage,
+    operation: orderOperationNames.returnToTriage,
+  })),
   {
     from: canonicalOrderStatusNames.pendingReview,
     to: canonicalOrderStatusNames.triage,
@@ -417,6 +433,8 @@ export const orderWaitingSchema = orderVersionedSchema.extend({
 });
 
 export const orderCompletionSchema = orderVersionedSchema.extend({
+  service_summary: z.string().trim().min(3).max(5_000),
+  final_notes: z.string().trim().max(5_000).default(""),
   solution: z
     .string()
     .trim()

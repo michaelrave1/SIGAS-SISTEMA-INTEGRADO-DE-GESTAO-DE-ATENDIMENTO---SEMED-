@@ -1,3 +1,4 @@
+import { ActionSubmitButton } from "@/components/action-submit-button";
 import Link from "next/link";
 import { uploadAttachment } from "@/app/actions";
 import { attachmentFallbackLimits } from "@/lib/application-config";
@@ -37,6 +38,7 @@ export function OrderAttachments({
       {canPost && (
         <form action={uploadAttachment}>
           <input type="hidden" name="id" value={id} />
+          <input type="hidden" name="request_id" value={crypto.randomUUID()} />
           <label>
             Adicionar arquivo
             <input
@@ -46,7 +48,7 @@ export function OrderAttachments({
               accept={policy?.allowed_extensions.join(",")}
             />
           </label>
-          <button>Enviar anexo</button>
+          <ActionSubmitButton>Enviar anexo</ActionSubmitButton>
         </form>
       )}
     </section>

@@ -8,6 +8,7 @@ export const permissionKeys = [
   "orders.assign",
   "orders.reassign",
   "orders.attend",
+  "orders.return_triage",
   "orders.wait_information",
   "orders.resume",
   "orders.complete",

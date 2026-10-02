@@ -152,6 +152,8 @@ export type Order = {
   priority: OrderPriority;
   status_reason: string;
   resolution: string | null;
+  service_summary: string | null;
+  final_observations: string | null;
   unit_id: string | null;
   destination_unit_id: string | null;
   opened_by: string | null;

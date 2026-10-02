@@ -16,6 +16,8 @@ export type OrderDetail = Pick<
   | "status"
   | "priority"
   | "resolution"
+  | "service_summary"
+  | "final_observations"
   | "unit_id"
   | "destination_unit_id"
   | "opened_by"
@@ -45,6 +47,8 @@ export type OrderServiceEntryView = Pick<
   Database["public"]["Tables"]["os_order_service_entries"]["Row"],
   | "id"
   | "entry_type"
+  | "operational_kind"
+  | "related_entry_id"
   | "entry_type_name"
   | "description"
   | "serviced_at"

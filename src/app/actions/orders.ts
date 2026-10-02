@@ -59,6 +59,28 @@ function invalidOrderAction(form: FormData, operation: string) {
   return actionFailed(orderPath(form), "validation", operation);
 }
 
+export async function serviceOperation(form: FormData) {
+  const input = orderVersionedSchema.extend({
+    service_action: z.enum(["IMPEDIMENT", "PENDING", "RESOLVE", "REQUEST_INFORMATION", "REQUEST_FORWARDING", "OPERATIONAL_UPDATE", "RETURN_TRIAGE"]),
+    description: z.string().trim().min(3).max(2000),
+    entry_kind: z.string().trim().min(1).max(80),
+    related_entry: z.preprocess(value => value === "" || value === null ? undefined : value, z.coerce.number().int().positive().optional()),
+    material_status: z.preprocess(value => value === null ? undefined : value, z.enum(["Sim", "Não", "Não informado"]).optional()),
+  }).safeParse(Object.fromEntries(form));
+  if (!input.success) return invalidOrderAction(form, "SERVICE_OPERATION");
+  const { db } = await session();
+  const { id, version, service_action, description, entry_kind, related_entry, material_status } = input.data;
+  const permission = service_action === "RETURN_TRIAGE" ? orderActionPermissions.RETURN_TRIAGE
+    : service_action === "REQUEST_INFORMATION" ? orderActionPermissions.WAIT_INFORMATION : orderActionPermissions.SERVICE_OPERATION;
+  await requireActionPermission(db, permission, `/ordens/${id}`, service_action);
+  const { error } = await db.rpc("os_service_operation", {
+    target: id, expected_version: version, service_action, description, entry_kind,
+    related_entry: related_entry ?? null, material_status: material_status ?? null,
+  });
+  if (error) return orderActionFailed(`/ordens/${id}`, error, service_action);
+  refreshOrder(id);
+}
+
 export async function createOrder(form: FormData) {
   const { db } = await session();
   await requireActionPermission(
@@ -306,11 +328,13 @@ export async function completeOrder(form: FormData) {
   if (!input.success) return invalidOrderAction(form, "COMPLETE");
   const { db } = await session();
   await requireActionPermission(db, orderActionPermissions.COMPLETE, `/ordens/${input.data.id}`, "COMPLETE");
-  const { id, version, solution } = input.data;
+  const { id, version, solution, service_summary, final_notes } = input.data;
   const { error } = await db.rpc("os_complete_order", {
     target: id,
     expected_version: version,
     solution,
+    service_summary,
+    final_notes,
   });
   if (error) return orderActionFailed(`/ordens/${id}`, error, "COMPLETE");
   refreshOrder(id);
@@ -452,18 +476,12 @@ export async function updateOrderLinksLegacy(form: FormData) {
 }
 
 export async function addMessage(form: FormData) {
-  const { db, user } = await session();
-  const id = z.uuid().parse(formText(form, "id"));
+  const { db } = await session();
+  const input = z.object({ id: z.uuid(), body: z.string().trim().min(1).max(fieldLimits.message), request_id: z.uuid() }).safeParse(Object.fromEntries(form));
+  if (!input.success) return invalidOrderAction(form, "ADD_MESSAGE");
+  const { id, body, request_id } = input.data;
   await requireActionPermission(db, orderActionPermissions.ADD_MESSAGE, `/ordens/${id}`, "ADD_MESSAGE");
-  const body = z
-    .string()
-    .trim()
-    .min(1)
-    .max(fieldLimits.message)
-    .parse(formText(form, "body"));
-  const { error } = await db
-    .from("os_messages")
-    .insert({ order_id: id, author_id: user.id, body });
-  if (error) return actionFailed(`/ordens/${id}`);
+  const { error } = await db.rpc("os_add_message", { target: id, message_body: body, submission_id: request_id });
+  if (error) return orderActionFailed(`/ordens/${id}`, error, "ADD_MESSAGE");
   revalidatePath(`/ordens/${id}`);
 }

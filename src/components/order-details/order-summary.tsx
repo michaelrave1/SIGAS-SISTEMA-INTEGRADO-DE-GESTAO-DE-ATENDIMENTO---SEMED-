@@ -7,6 +7,7 @@ const detailLabels = {
   occurred_at: "Data do ocorrido",
   has_material: "Material",
   police_report: "B.O. / REDS",
+  operational_observation: "Observações operacionais",
 } satisfies Partial<Record<keyof OrderDetails, string>>;
 
 export function OrderSummary({
@@ -45,6 +46,8 @@ export function OrderSummary({
             <dd>{order.resolution}</dd>
           </>
         )}
+        {order.service_summary && <><dt>Resumo do serviço executado</dt><dd>{order.service_summary}</dd></>}
+        {order.final_observations && <><dt>Observações finais</dt><dd>{order.final_observations}</dd></>}
         {Object.entries(order.details).map(([key, value]) => (
           <div key={key}>
             <dt>{detailLabels[key as keyof typeof detailLabels] ?? key}</dt>

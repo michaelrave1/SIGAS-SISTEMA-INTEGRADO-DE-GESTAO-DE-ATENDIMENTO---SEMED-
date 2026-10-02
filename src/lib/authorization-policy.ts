@@ -27,6 +27,8 @@ export const orderActionPermissions = {
   CANCEL: "orders.cancel",
   REOPEN: "orders.reopen",
   EDIT: "orders.update",
+  SERVICE_OPERATION: "orders.attend",
+  RETURN_TRIAGE: "orders.return_triage",
   ADD_MESSAGE: "orders.view",
   UPLOAD_ATTACHMENT: "orders.view",
 } as const satisfies Record<string, PermissionKey>;
