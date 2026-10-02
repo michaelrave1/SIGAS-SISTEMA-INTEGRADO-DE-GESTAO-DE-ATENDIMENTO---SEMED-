@@ -595,6 +595,12 @@ td small {
 .span-2 {
   grid-column: span 2;
 }
+.triage-forwarding-form > label {
+  margin-bottom: 0;
+}
+.triage-forwarding-submit {
+  align-self: end;
+}
 .notice {
   padding: 16px;
   border: 1px solid #c8d9f3;

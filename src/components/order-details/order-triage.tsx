@@ -50,7 +50,7 @@ export function OrderTriage({
       {(canAssign || canReassign) && (
         <form
           action={canAssign ? assignOrder : reassignOrder}
-          className="form-grid"
+          className="form-grid triage-forwarding-form"
         >
           {fields}
           <label>
@@ -86,7 +86,7 @@ export function OrderTriage({
               Solicite ao administrador a atualização dos vínculos.
             </p>
           )}
-          <div>
+          <div className="triage-forwarding-submit">
             <ActionSubmitButton
               disabled={!responsibleMemberships.length}
               pendingLabel="Encaminhando..."
