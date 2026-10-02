@@ -3,13 +3,17 @@
 import { useState } from "react";
 import {
   addServiceEntry,
+  acceptAssignment,
   completeOrder,
+  resumeService,
   serviceOperation,
+  startService,
 } from "@/app/actions/orders";
 import { ActionSubmitButton } from "@/components/action-submit-button";
 import {
   isCompletionServiceType,
-  serviceActionOptions,
+  availableServiceOptions,
+  isServiceProgressAction,
 } from "@/lib/service-actions";
 import { workflowLimits } from "@/lib/domain";
 import type { AvailableWorkflowAction } from "./types";
@@ -28,15 +32,18 @@ export function OrderServiceForm({
   openIssues: { id: number; description: string; operational_kind: string }[];
 }) {
   const [selected, setSelected] = useState("");
-  const allowed = new Set(actions.map((action) => action.operation));
-  const options = serviceActionOptions.filter(
-    ([action]) =>
-      allowed.has(action) && (action !== "RESOLVE" || openIssues.length > 0),
-  );
+  const options = availableServiceOptions(actions, openIssues.length);
   const selectedIsAvailable = options.some(([action]) => action === selected);
   const selectedAction = selectedIsAvailable ? selected : "";
   const isFormalEntry = selectedAction === "ADD_SERVICE_ENTRY";
   const isCompletion = selectedAction === "COMPLETE";
+  const isProgress = isServiceProgressAction(selectedAction);
+  const progressAction =
+    selectedAction === "ACCEPT_ASSIGNMENT"
+      ? acceptAssignment
+      : selectedAction === "START_SERVICE"
+        ? startService
+        : resumeService;
   const recordTypes = serviceEntryTypes.filter(
     (type) => !isCompletionServiceType(type.key, type.name),
   );
@@ -46,11 +53,13 @@ export function OrderServiceForm({
   return (
     <form
       action={
-        isCompletion
-          ? completeOrder
-          : isFormalEntry
-            ? addServiceEntry
-            : serviceOperation
+        isProgress
+          ? progressAction
+          : isCompletion
+            ? completeOrder
+            : isFormalEntry
+              ? addServiceEntry
+              : serviceOperation
       }
       className="form-grid service-entry-form"
     >
@@ -72,7 +81,18 @@ export function OrderServiceForm({
           ))}
         </select>
       </label>
-      {!isCompletion && (
+      {isProgress && (
+        <p className="muted span-2">
+          {selectedAction === "ACCEPT_ASSIGNMENT"
+            ? "Confirme que você assumirá o atendimento desta OS."
+            : selectedAction === "START_SERVICE"
+              ? "Inicie o atendimento para liberar os registros técnicos e as demais ações permitidas."
+              : "Retome o atendimento após o período de espera."}{" "}
+          O profissional, a data e a hora serão registrados no histórico pelo
+          sistema.
+        </p>
+      )}
+      {!isCompletion && !isProgress && (
         <>
           <label>
             Tipo do registro
@@ -124,21 +144,23 @@ export function OrderServiceForm({
           </select>
         </label>
       )}
-      <label className="span-2">
-        {isCompletion ? "Resumo do serviço executado" : "Descrição"}
-        <textarea
-          name={isCompletion ? "service_summary" : "description"}
-          required
-          minLength={workflowLimits.solutionMin}
-          maxLength={
-            isFormalEntry || isCompletion
-              ? workflowLimits.solutionMax
-              : workflowLimits.justificationMax
-          }
-          rows={4}
-          disabled={!selectedAction}
-        />
-      </label>
+      {!isProgress && (
+        <label className="span-2">
+          {isCompletion ? "Resumo do serviço executado" : "Descrição"}
+          <textarea
+            name={isCompletion ? "service_summary" : "description"}
+            required
+            minLength={workflowLimits.solutionMin}
+            maxLength={
+              isFormalEntry || isCompletion
+                ? workflowLimits.solutionMax
+                : workflowLimits.justificationMax
+            }
+            rows={4}
+            disabled={!selectedAction}
+          />
+        </label>
+      )}
       {isCompletion && (
         <>
           <label className="span-2">
@@ -167,7 +189,11 @@ export function OrderServiceForm({
       )}
       <div>
         <ActionSubmitButton disabled={!selectedAction}>
-          {isCompletion ? "Encerrar atendimento" : "Registrar atendimento"}
+          {isProgress
+            ? options.find(([action]) => action === selectedAction)?.[1]
+            : isCompletion
+              ? "Encerrar atendimento"
+              : "Registrar atendimento"}
         </ActionSubmitButton>
       </div>
     </form>

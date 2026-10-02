@@ -1,5 +1,8 @@
 import { date } from "@/components/ui";
-import { serviceActionOptions } from "@/lib/service-actions";
+import {
+  availableServiceOptions,
+  serviceActionOptions,
+} from "@/lib/service-actions";
 import { OrderServiceForm } from "./order-service-form";
 import type { AvailableWorkflowAction, OrderServiceEntryView } from "./types";
 
@@ -20,12 +23,8 @@ export function OrderService({
   actions: AvailableWorkflowAction[];
   openIssues: { id: number; description: string; operational_kind: string }[];
 }) {
-  const allowed = new Set(actions.map((action) => action.operation as string));
   const unresolved = openIssues;
-  const operations = serviceActionOptions.filter(
-    ([action]) =>
-      allowed.has(action) && (action !== "RESOLVE" || unresolved.length > 0),
-  );
+  const operations = availableServiceOptions(actions, unresolved.length);
   if (!canAdd && !entries.length && !operations.length) return null;
 
   return (

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import { buildOrderCycle } from "../src/lib/order-workflow.ts";
+import { availableServiceOptions } from "../src/lib/service-actions.ts";
 
 const directory = new URL("../supabase/migrations/", import.meta.url);
 const files = (await fs.readdir(directory)).filter(name => name.endsWith(".sql") && !name.endsWith("_performance_indexes.sql")).sort();
@@ -74,7 +75,11 @@ for (const upgrade of [false, true]) test(`atendimento completo: ${upgrade ? "up
     const time=(await as(tech,"select os_acknowledge_dispatch($1) t",[dispatch])).rows[0].t;
     assert.deepEqual((await as(tech,"select os_acknowledge_dispatch($1) t",[dispatch])).rows[0].t,time);
     assert.ok((await actions(tech)).includes("ACCEPT_ASSIGNMENT"));
+    const visibleActions = async () => availableServiceOptions((await actions(tech)).map(operation=>({operation})),0).map(([action])=>action);
+    assert.ok((await visibleActions()).includes("ACCEPT_ASSIGNMENT"));
+    assert.ok(!(await visibleActions()).includes("ADD_SERVICE_ENTRY"));
     await as(tech,"select os_accept_assignment($1,3)",[order]);
+    assert.ok((await visibleActions()).includes("START_SERVICE"));
     await assert.rejects(as("","select os_start_service($1,4)",[order]),/Acesso negado/);
     await db.exec("delete from os_access_profile_permissions where access_profile_id=(select id from os_access_profiles where key='responsible') and permission_id=(select id from os_permissions where key='orders.attend')");
     await assert.rejects(as(tech,"select os_start_service($1,4)",[order]),/Ação não permitida/);
@@ -82,6 +87,9 @@ for (const upgrade of [false, true]) test(`atendimento completo: ${upgrade ? "up
     await assert.rejects(as(other,"select os_start_service($1,4)",[order]),/Ação não permitida/);
     await assert.rejects(as(outsider,"select os_start_service($1,4)",[order]),/Ação não permitida/);
     await as(tech,"select os_start_service($1,4)",[order]);
+    const attendingOptions=await visibleActions();
+    for (const action of ["ADD_SERVICE_ENTRY","IMPEDIMENT","PENDING","REQUEST_INFORMATION","REQUEST_FORWARDING","OPERATIONAL_UPDATE","RETURN_TRIAGE"]) assert.ok(attendingOptions.includes(action),action);
+    assert.ok(!attendingOptions.includes("START_SERVICE"));
     await assert.rejects(as(tech,"select os_add_service_entry($1,$2,'encerrar_atendimento','Encerramento incorreto',now())",[order,await version()]),/conclusão/);
     await assert.rejects(as(tech,"select os_start_service($1,4)",[order]),/alterada/);
     for(const kind of ["diagnóstico","ação realizada","visita","material","observação técnica"])
