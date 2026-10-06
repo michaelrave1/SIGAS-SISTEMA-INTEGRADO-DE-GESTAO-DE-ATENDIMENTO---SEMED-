@@ -29,7 +29,7 @@ export function OrderForm({
   const isSchoolSecurity = normalizeAreaName(area) === "SEGURANÇA ESCOLAR";
   const unique = (key: CatalogDataKey, rows: CatalogOption[]) =>
     [...new Set(rows.map((c) => c.data[key]).filter(Boolean))]
-      .map((value) => key === "area" ? normalizeAreaName(value ?? "") : value)
+      .map((value) => (key === "area" ? normalizeAreaName(value ?? "") : value))
       .sort();
   const filtered = categories.filter(
     (c) =>
@@ -37,6 +37,10 @@ export function OrderForm({
       (!nature || c.data.nature === nature) &&
       (!type || c.data.type === type),
   );
+  const categoryId =
+    area && nature && type
+      ? (filtered.map((category) => category.id).sort()[0] ?? "")
+      : "";
   return (
     <form action={createOrder} className="card form-grid">
       <label>
@@ -89,7 +93,9 @@ export function OrderForm({
           <option value="">Selecione</option>
           {unique(
             "nature",
-            categories.filter((c) => normalizeAreaName(c.data.area ?? "") === area),
+            categories.filter(
+              (c) => normalizeAreaName(c.data.area ?? "") === area,
+            ),
           ).map((v) => (
             <option key={v}>{v}</option>
           ))}
@@ -107,31 +113,16 @@ export function OrderForm({
           {unique(
             "type",
             categories.filter(
-              (c) => normalizeAreaName(c.data.area ?? "") === area && c.data.nature === nature,
+              (c) =>
+                normalizeAreaName(c.data.area ?? "") === area &&
+                c.data.nature === nature,
             ),
           ).map((v) => (
             <option key={v}>{v}</option>
           ))}
         </select>
       </label>
-      <label className="span-2">
-        Descrição e detalhamento
-        <select
-          key={`${area}/${nature}/${type}`}
-          name="category_id"
-          required
-          disabled={!type}
-        >
-          <option value="">Selecione a classificação</option>
-          {filtered.map((c) => (
-            <option key={c.id} value={c.id}>
-              {[c.data.description, c.data.detail]
-                .filter(Boolean)
-                .join(" · ") || c.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <input type="hidden" name="category_id" value={categoryId} />
       <label>
         Possui material?
         <select name="has_material">
@@ -183,7 +174,7 @@ export function OrderForm({
           Anexos e mensagens poderão ser adicionados após a abertura. A
           atribuição da equipe será feita pela administração.
         </p>
-        <button>Abrir ordem de serviço</button>
+        <button disabled={!categoryId}>Abrir ordem de serviço</button>
       </div>
     </form>
   );
