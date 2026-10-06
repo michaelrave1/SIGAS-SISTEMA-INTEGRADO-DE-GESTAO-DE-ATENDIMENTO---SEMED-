@@ -3,9 +3,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   acknowledgeDispatch,
+  acknowledgeMessage,
   pendingAcknowledgements,
 } from "@/app/actions/acknowledgements";
-import type { AcknowledgementState } from "@/lib/order-acknowledgements";
+import type {
+  AcknowledgementState,
+  PendingAcknowledgement,
+} from "@/lib/order-acknowledgements";
 
 export function AcknowledgementGate({
   initial,
@@ -24,14 +28,16 @@ export function AcknowledgementGate({
   const blocked = items.length > 0 || Boolean(error);
 
   const refresh = useCallback(
-    async (target?: string) => {
+    async (target?: PendingAcknowledgement) => {
       // Serializar polling e cliques evita que uma resposta antiga restaure pendências já confirmadas.
       if (requestRunning.current) return;
       requestRunning.current = true;
-      setBusy(target ?? "refresh");
+      setBusy(target?.id ?? "refresh");
       try {
         const result = target
-          ? await acknowledgeDispatch(target)
+          ? target.kind === "message"
+            ? await acknowledgeMessage(target.id)
+            : await acknowledgeDispatch(target.id)
           : await pendingAcknowledgements();
         if (result.ok) {
           setItems(result.items);
@@ -88,19 +94,41 @@ export function AcknowledgementGate({
       >
         <h2 id="acknowledgement-title">CIÊNCIA OBRIGATÓRIA</h2>
         <p id="acknowledgement-description">
-          Confirme individualmente a ciência de cada encaminhamento para
-          continuar. Esta confirmação não inicia o atendimento da OS.
+          Confirme individualmente a ciência de cada encaminhamento e mensagem
+          para continuar. Esta confirmação não inicia o atendimento da OS.
         </p>
-        <p aria-live="polite">{items.length} encaminhamento(s) pendente(s).</p>
+        <p aria-live="polite">{items.length} ciência(s) pendente(s).</p>
         {error && <p role="alert">{error}</p>}
         <ul className="acknowledgement-list" aria-busy={busy !== null}>
           {items.map((item) => (
             <li key={item.id}>
               <div>
                 <strong>OS {item.protocol}</strong>
+                <p>
+                  <strong>
+                    {item.kind === "message" ? "Mensagem" : "Encaminhamento"}
+                  </strong>
+                </p>
                 <p>{item.title}</p>
+                {item.kind === "message" && (
+                  <>
+                    <small>
+                      Enviada por {item.author_name ?? "Equipe da OS"}
+                    </small>
+                    <p
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        overflowWrap: "anywhere",
+                      }}
+                    >
+                      {item.body}
+                    </p>
+                  </>
+                )}
                 <small>
-                  Encaminhada em{" "}
+                  {item.kind === "message"
+                    ? "Mensagem enviada em"
+                    : "Encaminhada em"}{" "}
                   {new Date(item.encaminhado_em).toLocaleString("pt-BR", {
                     timeZone: "America/Sao_Paulo",
                   })}
@@ -108,8 +136,8 @@ export function AcknowledgementGate({
               </div>
               <button
                 disabled={busy !== null}
-                onClick={() => void refresh(item.id)}
-                aria-label={`Ciente da OS ${item.protocol}`}
+                onClick={() => void refresh(item)}
+                aria-label={`Ciente ${item.kind === "message" ? "da mensagem" : "do encaminhamento"} da OS ${item.protocol}`}
               >
                 {busy === item.id ? "REGISTRANDO…" : "CIENTE"}
               </button>

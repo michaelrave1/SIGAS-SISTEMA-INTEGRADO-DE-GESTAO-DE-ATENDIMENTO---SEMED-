@@ -9,6 +9,7 @@ export const orderTimelineEventLabels: Readonly<Record<string, string>> = {
   service_completion_report: "Relatório de conclusão",
   wait_period_closed: "Período de espera",
   message_added: "Mensagem",
+  message_acknowledged: "Ciência da mensagem",
   order_opened: "Abertura",
   order_reconciled: "Conciliação",
   triage_started: "Início da triagem",

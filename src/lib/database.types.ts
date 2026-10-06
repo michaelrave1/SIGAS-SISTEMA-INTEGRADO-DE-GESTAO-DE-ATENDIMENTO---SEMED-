@@ -187,6 +187,11 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      os_pending_all_acknowledgements: {
+        Args: Record<string, never>;
+        Returns: Json;
+      };
+      os_acknowledge_message: { Args: { target: string }; Returns: string };
       os_service_action_catalog: {
         Args: Record<string, never>;
         Returns: {
