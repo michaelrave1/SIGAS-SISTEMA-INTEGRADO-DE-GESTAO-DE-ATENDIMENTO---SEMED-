@@ -17,7 +17,7 @@ import {
   KeyRound,
 } from "lucide-react";
 import { logout } from "@/app/actions";
-import { BackButton, BackButtonContext } from "@/components/back-button";
+import { BackButton, BackNavigationProvider } from "@/components/back-button";
 import type { PermissionKey } from "@/lib/authorization-core";
 import { firstAuthorizedRoute, visibleNavigationItems } from "@/lib/navigation";
 
@@ -81,7 +81,7 @@ export function Shell({
     );
   };
   return (
-    <BackButtonContext.Provider value={true}>
+    <BackNavigationProvider fallback={homeHref}>
       <div className="app-shell">
         <a className="skip" href="#conteudo">
           Pular para conteúdo
@@ -149,6 +149,6 @@ export function Shell({
           </main>
         </div>
       </div>
-    </BackButtonContext.Provider>
+    </BackNavigationProvider>
   );
 }

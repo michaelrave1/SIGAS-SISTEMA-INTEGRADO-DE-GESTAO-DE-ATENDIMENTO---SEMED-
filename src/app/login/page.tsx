@@ -1,5 +1,4 @@
 import { loginWithGoogle } from "@/app/actions";
-import { BackButton } from "@/components/back-button";
 import { configured } from "@/lib/supabase";
 import Link from "next/link";
 import { allowedGoogleDomains } from "@/lib/professional-identity";
@@ -50,7 +49,6 @@ export default async function Login({
       </section>
       <section className="login-form">
         <div>
-          <BackButton />
           <span className="eyebrow">ORDENS DE SERVIÇO</span>
           <h2>Bem-vindo ao OS SEMED</h2>
           <p className="muted">Acesse com sua conta institucional.</p>
