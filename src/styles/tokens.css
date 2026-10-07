@@ -1,12 +1,17 @@
 :root {
-  --background: 216 38% 97%;
+  --background: 225 45% 97%;
   --foreground: 220 43% 16%;
   --primary: 222 89% 30%;
   --secondary: 91 100% 44%;
-  --muted: 216 15% 47%;
+  --muted: 220 18% 42%;
   --border: 218 43% 90%;
   --accent: 216 100% 95%;
-  --radius: 0.625rem;
+  --radius: 1.5rem;
+  --radius-control: 0.875rem;
+  --teal: #087f83;
+  --violet: #6950ba;
+  --coral: #bd4d35;
+  --surface-shadow: 0 8px 32px rgb(31 48 100 / 6%);
   --navy: #06215f;
   --lime: #6ee000;
 }

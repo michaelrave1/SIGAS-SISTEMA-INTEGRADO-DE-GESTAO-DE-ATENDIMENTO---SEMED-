@@ -2,7 +2,7 @@
 @import "../styles/order-details.css";
 @import "../styles/access-profiles.css";
 
-/* Identidade do SIGMA: tokens e tipografia do projeto de referência. */
+/* Identidade visual do SIGAS. */
 * {
   box-sizing: border-box;
 }
@@ -57,7 +57,7 @@ button,
   background: hsl(var(--primary));
   color: white;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   padding: 11px 17px;
   font:
     600 14px "Segoe UI",
@@ -113,7 +113,7 @@ textarea {
   width: 100%;
   padding: 11px 12px;
   border: 1px solid hsl(var(--primary) / 0.2);
-  border-radius: 7px;
+  border-radius: var(--radius-control);
   background: hsl(var(--accent));
   color: hsl(var(--primary));
   font:
@@ -155,10 +155,10 @@ input[type="checkbox"] {
 .card {
   background: white;
   border: 1px solid hsl(var(--border));
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 24px;
   margin-bottom: 22px;
-  box-shadow: 0 2px 5px #06215f03;
+  box-shadow: var(--surface-shadow);
 }
 .brand {
   color: white;
@@ -882,3 +882,202 @@ td small {
   border-bottom: 1px solid hsl(var(--border));
 }
 .acknowledgement-list li > div { flex: 1 1 240px; overflow-wrap: anywhere; }
+
+/* Superfícies suaves e detalhes de cor compartilhados por todos os módulos. */
+body {
+  background:
+    radial-gradient(ellipse at 95% 0%, #eae7fc 0, transparent 45%),
+    radial-gradient(ellipse at 15% 70%, #e3f5f3 0, transparent 45%),
+    hsl(var(--background));
+  line-height: 1.5;
+}
+
+button,
+.button,
+input,
+select,
+textarea,
+.sidebar nav a {
+  transition: background-color 160ms ease, border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+button:not(.secondary):not(.danger):not(.icon-button):not(.google-login),
+.button:not(.secondary):not(.danger) {
+  background: linear-gradient(120deg, #1647a3, #3f50b8);
+  box-shadow: 0 4px 12px rgb(31 64 142 / 15%);
+}
+
+button:not(.secondary):not(.danger):not(.icon-button):not(.google-login):hover,
+.button:not(.secondary):not(.danger):hover {
+  background: linear-gradient(120deg, #103477, #344397);
+}
+
+input,
+select,
+textarea {
+  background: #f8faff;
+  border-color: #d6deef;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #617bd4;
+  box-shadow: 0 0 0 4px rgb(97 123 212 / 10%);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: #3253af;
+  box-shadow: none;
+}
+
+.sidebar {
+  margin: 12px 0 12px 12px;
+  top: 12px;
+  height: calc(100dvh - 24px);
+  border-radius: 28px;
+  background:
+    radial-gradient(ellipse at 100% 0%, #34408d 0, transparent 55%),
+    linear-gradient(165deg, #112d66, #172448 75%, #154653);
+  box-shadow: 0 12px 32px rgb(18 38 78 / 16%);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff50 transparent;
+}
+
+.sidebar nav a {
+  border-radius: 14px;
+}
+
+.sidebar nav .selected {
+  background: linear-gradient(100deg, #ffffff24, #ffffff12);
+  border-left-color: #7de4d6;
+  box-shadow: inset 0 0 0 1px #ffffff17;
+}
+
+.sidebar nav .selected svg {
+  color: #8ae8dc;
+}
+
+.topbar {
+  margin: 12px 20px 0;
+  border: 1px solid #e2e7f3;
+  border-radius: 22px;
+  box-shadow: var(--surface-shadow);
+  background: #ffffffed;
+}
+
+.user-name {
+  border-radius: 999px;
+  background: #eef3ff;
+}
+
+.heading h1 {
+  color: #17396f;
+  font-weight: 750;
+}
+
+.welcome {
+  border-radius: 28px;
+  background:
+    radial-gradient(ellipse at 100% 15%, #5349a6 0, transparent 60%),
+    linear-gradient(110deg, #112d66, #174c79 65%, #126a70);
+  box-shadow: 0 12px 28px rgb(28 59 108 / 14%);
+}
+
+.stats .stat {
+  border-top: 3px solid #456ac0;
+  background: linear-gradient(145deg, #fff, #f0f4ff);
+}
+
+.stats .stat:nth-child(2) {
+  border-top-color: var(--teal);
+  background: linear-gradient(145deg, #fff, #edf9f5);
+}
+
+.stats .stat:nth-child(3) {
+  border-top-color: var(--violet);
+  background: linear-gradient(145deg, #fff, #f5effc);
+}
+
+.stats .stat:nth-child(4) {
+  border-top-color: var(--coral);
+  background: linear-gradient(145deg, #fff, #fff3ed);
+}
+
+.stats .stat:nth-child(2) svg { color: var(--teal); background: #dcf3ec; }
+.stats .stat:nth-child(3) svg { color: var(--violet); background: #eae2f9; }
+.stats .stat:nth-child(4) svg { color: var(--coral); background: #ffeadf; }
+.stat svg { border-radius: 16px; }
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+th { background: #eef2fc; color: #46597b; }
+thead th:first-child { border-top-left-radius: 14px; border-bottom-left-radius: 14px; }
+thead th:last-child { border-top-right-radius: 14px; border-bottom-right-radius: 14px; }
+tbody tr:last-child td:first-child { border-bottom-left-radius: 14px; }
+tbody tr:last-child td:last-child { border-bottom-right-radius: 14px; }
+tbody tr:hover td { background: #f6f8ff; }
+
+.notice,
+.order-review-alert,
+.permission-matrix fieldset,
+.order-fact,
+.order-cycle-summary,
+.timeline article,
+.skip {
+  border-radius: 16px;
+}
+
+.order-header {
+  background: linear-gradient(120deg, #fff 55%, #eef5fc);
+}
+
+.service-records {
+  border-top: 3px solid #55aaa5;
+}
+
+.workflow-actions-card {
+  border-top: 3px solid #8073bf;
+}
+
+.acknowledgement-dialog {
+  border-radius: 26px;
+  box-shadow: 0 24px 80px rgb(15 35 75 / 25%);
+}
+
+.login-brand {
+  border-radius: 28px;
+  margin: 16px 0 16px 16px;
+  background:
+    radial-gradient(ellipse at 100% 20%, #504c9f 0, transparent 60%),
+    linear-gradient(145deg, #112d66, #1c3c70 65%, #126a70);
+}
+
+.login-form {
+  margin: 16px;
+  border: 1px solid #e2e7f3;
+  border-radius: 28px;
+  box-shadow: var(--surface-shadow);
+}
+
+.access-card { border-radius: 28px; box-shadow: var(--surface-shadow); }
+
+@media (max-width: 760px) {
+  .sidebar { margin: 10px; width: calc(100% - 20px); height: auto; top: 0; border-radius: 22px; }
+  .topbar { margin: 10px 10px 0; border-radius: 18px; }
+  .card { border-radius: 20px; }
+  .welcome { border-radius: 22px; }
+  .login-brand { margin: 10px; border-radius: 22px; }
+  .login-form { margin: 10px; border-radius: 22px; padding: 30px 24px; }
+  .acknowledgement-dialog { border-radius: 22px; padding: 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button, .button, input, select, textarea, .sidebar nav a { transition: none; }
+}
