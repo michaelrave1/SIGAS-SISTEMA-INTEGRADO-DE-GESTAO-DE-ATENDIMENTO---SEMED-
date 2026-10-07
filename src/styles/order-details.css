@@ -529,3 +529,37 @@
   --actor-color: hsl(303 65% 28%);
   --actor-background: hsl(303 65% 94%);
 }
+
+.timeline-primary-0 {
+  --actor-color: #174a9a;
+  --actor-background: #eaf1ff;
+}
+.timeline-primary-1 {
+  --actor-color: #a02025;
+  --actor-background: #fff0f0;
+}
+.timeline-primary-2 {
+  --actor-color: #785500;
+  --actor-background: #fff4cf;
+}
+.timeline-primary-3 {
+  --actor-color: #256329;
+  --actor-background: #edf7ed;
+}
+.timeline-primary-4 {
+  --actor-color: #a3440b;
+  --actor-background: #fff0e4;
+}
+.timeline-primary-5 {
+  --actor-color: #086779;
+  --actor-background: #e5f8fc;
+}
+.timeline-primary-6 {
+  --actor-color: #65379c;
+  --actor-background: #f1eaff;
+}
+.timeline-actor .user-avatar {
+  border-color: var(--actor-color);
+  width: 38px;
+  height: 38px;
+}

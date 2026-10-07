@@ -423,6 +423,14 @@ export type Database = {
           total_count: number;
         }[];
       };
+      os_order_timeline_actors: {
+        Args: { target: string; event_ids: number[] };
+        Returns: {
+          event_id: number;
+          actor_key: string;
+          avatar_url: string | null;
+        }[];
+      };
       os_order_filter_options: {
         Args: Record<PropertyKey, never>;
         Returns: {

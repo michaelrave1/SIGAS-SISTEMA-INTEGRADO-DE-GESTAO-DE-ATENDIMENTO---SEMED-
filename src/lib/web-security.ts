@@ -59,7 +59,7 @@ export function buildContentSecurityPolicy({
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${development ? " 'unsafe-eval'" : ""}`,
     "script-src-attr 'none'",
     `style-src 'self' 'nonce-${nonce}'${development ? " 'unsafe-inline'" : ""}`,
-    "img-src 'self' data: blob:",
+    "img-src 'self' data: blob: https://googleusercontent.com https://*.googleusercontent.com",
     "font-src 'self' data:",
     `connect-src ${[...connections].join(" ")}`,
     "media-src 'self' blob:",

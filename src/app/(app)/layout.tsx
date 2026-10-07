@@ -4,6 +4,7 @@ import { Shell } from "@/components/shell";
 import { getUserPermissions } from "@/lib/authorization";
 import { pendingAcknowledgements } from "@/app/actions/acknowledgements";
 import { AcknowledgementGate } from "@/components/acknowledgement-gate";
+import { googleAvatarUrl } from "@/lib/google-avatar";
 export const dynamic = "force-dynamic";
 export default async function AppLayout({
   children,
@@ -18,6 +19,7 @@ export default async function AppLayout({
     <AcknowledgementGate initial={acknowledgements}>
       <Shell
         name={user.email ?? "Conta institucional"}
+        avatarUrl={googleAvatarUrl(user.user_metadata)}
         admin={admin}
         managedCatalogKinds={catalogScope.kinds}
         permissions={[...permissions]}

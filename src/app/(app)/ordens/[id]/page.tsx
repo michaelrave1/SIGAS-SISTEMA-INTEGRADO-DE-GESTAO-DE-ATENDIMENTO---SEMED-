@@ -22,6 +22,7 @@ import type {
 } from "@/components/order-details/types";
 import { requirePagePermission } from "@/lib/authorization";
 import { routePermissions } from "@/lib/authorization-policy";
+import { googleAvatarUrl } from "@/lib/google-avatar";
 
 export default async function OrderPage({
   params,
@@ -122,6 +123,21 @@ export default async function OrderPage({
   );
 
   const canPost = collaboration.data === true;
+  const portraits = await db.rpc("os_order_timeline_actors", {
+    target: id,
+    event_ids: (timeline.data ?? []).map((event) => event.event_id),
+  });
+  // The optional presentation migration may not have been installed yet.
+  if (
+    portraits.error &&
+    !["PGRST202", "42883"].includes(portraits.error.code)
+  ) {
+    ensureQuerySucceeded(portraits, "Falha ao consultar participantes");
+  }
+  const actors = (portraits.data ?? []).map((actor) => ({
+    ...actor,
+    avatar_url: googleAvatarUrl({ avatar_url: actor.avatar_url }),
+  }));
   const catalogRows = (catalogs.data ?? []) as OrderCatalog[];
   const workflowOperations = availableActions.data ?? [];
   const canForward = workflowOperations.some(
@@ -180,6 +196,7 @@ export default async function OrderPage({
       <OrderTimeline
         orderId={id}
         events={timeline.data ?? []}
+        actors={actors}
         page={timelinePage}
         total={Number(timeline.data?.[0]?.total_count ?? 0)}
       />

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { logout } from "@/app/actions";
 import { BackButton, BackNavigationProvider } from "@/components/back-button";
+import { UserAvatar } from "@/components/user-avatar";
 import type { PermissionKey } from "@/lib/authorization-core";
 import { firstAuthorizedRoute, visibleNavigationItems } from "@/lib/navigation";
 
@@ -38,12 +39,14 @@ const icons = {
 export function Shell({
   children,
   name,
+  avatarUrl = null,
   admin,
   permissions,
   managedCatalogKinds = [],
 }: {
   children: React.ReactNode;
   name: string;
+  avatarUrl?: string | null;
   admin: boolean;
   permissions: PermissionKey[];
   managedCatalogKinds?: string[];
@@ -137,6 +140,7 @@ export function Shell({
             </div>
             <div className="row">
               <span className="user-name">{name}</span>
+              <UserAvatar url={avatarUrl} />
               <form action={logout}>
                 <button className="icon-button" title="Sair" aria-label="Sair">
                   <LogOut size={19} />

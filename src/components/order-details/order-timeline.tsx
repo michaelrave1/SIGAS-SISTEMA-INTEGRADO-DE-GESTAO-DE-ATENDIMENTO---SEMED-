@@ -2,8 +2,9 @@ import { Pagination, date } from "@/components/ui";
 import {
   orderTimelineEventLabel,
   orderTimelineTransition,
-  orderTimelineActorColors,
+  orderTimelineActorColor,
 } from "@/lib/order-timeline";
+import { UserAvatar } from "@/components/user-avatar";
 import type { OrderTimelineEvent } from "./types";
 
 export function OrderTimeline({
@@ -11,15 +12,15 @@ export function OrderTimeline({
   events,
   page,
   total,
+  actors = [],
 }: {
   orderId: string;
   events: OrderTimelineEvent[];
   page: number;
   total: number;
+  actors?: { event_id: number; actor_key: string; avatar_url: string | null }[];
 }) {
-  const actorColors = orderTimelineActorColors(
-    events.map((event) => event.actor_name),
-  );
+  const actorMap = new Map(actors.map((actor) => [actor.event_id, actor]));
   return (
     <section
       className="card functional-timeline"
@@ -36,6 +37,7 @@ export function OrderTimeline({
       </div>
       <ol>
         {events.map((event) => {
+          const actor = actorMap.get(event.event_id);
           const transition = orderTimelineTransition(
             event.from_status,
             event.to_status,
@@ -43,7 +45,7 @@ export function OrderTimeline({
           return (
             <li
               key={event.event_id}
-              className={actorColors.get(event.actor_name)}
+              className={`timeline-primary-${orderTimelineActorColor(actor?.actor_key ?? event.actor_name) % 7}`}
             >
               <span className="functional-timeline-marker" aria-hidden="true" />
               <article>
@@ -59,6 +61,7 @@ export function OrderTimeline({
                   </time>
                 </div>
                 <p className="timeline-actor">
+                  <UserAvatar url={actor?.avatar_url ?? null} />
                   <span className="timeline-actor-name">
                     {event.actor_name}
                   </span>
