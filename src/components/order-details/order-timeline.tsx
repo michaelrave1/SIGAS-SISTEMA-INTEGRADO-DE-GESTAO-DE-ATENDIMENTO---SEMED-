@@ -2,7 +2,7 @@ import { Pagination, date } from "@/components/ui";
 import {
   orderTimelineEventLabel,
   orderTimelineTransition,
-  orderTimelineActorColor,
+  orderTimelineActorColors,
 } from "@/lib/order-timeline";
 import type { OrderTimelineEvent } from "./types";
 
@@ -17,6 +17,9 @@ export function OrderTimeline({
   page: number;
   total: number;
 }) {
+  const actorColors = orderTimelineActorColors(
+    events.map((event) => event.actor_name),
+  );
   return (
     <section
       className="card functional-timeline"
@@ -40,7 +43,7 @@ export function OrderTimeline({
           return (
             <li
               key={event.event_id}
-              className={orderTimelineActorColor(event.actor_name)}
+              className={actorColors.get(event.actor_name)}
             >
               <span className="functional-timeline-marker" aria-hidden="true" />
               <article>

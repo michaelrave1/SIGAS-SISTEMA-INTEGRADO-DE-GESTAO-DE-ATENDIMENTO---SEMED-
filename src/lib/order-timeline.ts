@@ -56,5 +56,19 @@ export function orderTimelineActorColor(actorName: string) {
   for (const character of identity) {
     hash = (Math.imul(hash, 31) + character.codePointAt(0)!) >>> 0;
   }
-  return `timeline-actor-color-${hash % 8}`;
+  return hash % 32;
+}
+
+export function orderTimelineActorColors(actorNames: string[]) {
+  const colors = new Map<string, string>();
+  const used = new Set<number>();
+  for (const name of [...new Set(actorNames)].sort()) {
+    let color = orderTimelineActorColor(name);
+    for (let attempts = 0; used.has(color) && attempts < 32; attempts++) {
+      color = (color + 1) % 32;
+    }
+    used.add(color);
+    colors.set(name, `timeline-actor-color-${color}`);
+  }
+  return colors;
 }

@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import {
   orderTimelineEventLabel,
   orderTimelineTransition,
+  orderTimelineActorColors,
 } from "../src/lib/order-timeline.ts";
 
 const migration = await fs.readFile(
@@ -13,6 +14,14 @@ const migration = await fs.readFile(
   ),
   "utf8",
 );
+
+test("atores distintos não repetem cores e eventos repetidos mantêm a identificação", () => {
+  const names = Array.from({ length: 25 }, (_, i) => `Profissional ${i}`);
+  const colors = orderTimelineActorColors([...names, names[0]]);
+  assert.equal(colors.size, 25);
+  assert.equal(new Set(colors.values()).size, 25);
+  assert.deepEqual(colors, orderTimelineActorColors([...names].reverse()));
+});
 
 test("traduz eventos funcionais sem expor nomes técnicos", () => {
   assert.equal(orderTimelineEventLabel("order_opened", null), "Abertura");

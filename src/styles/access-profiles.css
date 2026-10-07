@@ -54,7 +54,7 @@ button.danger:hover {
 .permission-matrix legend {
   padding: 0 7px;
   color: var(--navy);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
 }
 
@@ -99,19 +99,19 @@ button.danger:hover {
 
 .permission-module-head > span {
   color: hsl(var(--muted));
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .permission-module-head button {
   min-height: 32px;
   padding: 6px 9px;
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .permission-group h3 {
   margin: 16px 0 4px;
   color: hsl(var(--muted));
-  font-size: 10px;
+  font-size: 14px;
   letter-spacing: 0.7px;
   text-transform: uppercase;
 }
@@ -136,7 +136,7 @@ button.danger:hover {
 
 .permission-save-bar p {
   margin: 0;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .unsaved-changes {
@@ -146,7 +146,7 @@ button.danger:hover {
 
 .permission-option strong {
   color: hsl(var(--foreground));
-  font-size: 12px;
+  font-size: 14px;
   overflow-wrap: anywhere;
 }
 

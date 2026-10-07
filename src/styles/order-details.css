@@ -18,7 +18,7 @@
 .order-protocol {
   margin: 0;
   color: hsl(var(--primary));
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: 0.5px;
 }
@@ -43,14 +43,14 @@
 .order-header-meta dt {
   margin-bottom: 6px;
   color: hsl(var(--muted));
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
 .order-header-meta dd {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
@@ -66,7 +66,7 @@
   color: #7b5200;
 }
 .order-review-alert span {
-  font-size: 12px;
+  font-size: 14px;
 }
 .order-cycle-card .section-head {
   margin-bottom: 24px;
@@ -86,7 +86,7 @@
   align-items: center;
   gap: 9px;
   color: hsl(var(--muted));
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   text-align: center;
 }
@@ -136,7 +136,7 @@
 .cycle-state {
   padding: 6px 10px;
   border-radius: 20px;
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 700;
 }
 .cycle-state.waiting,
@@ -159,7 +159,7 @@
   border-radius: 8px;
   background: #fff8e7;
   color: #7b5200;
-  font-size: 12px;
+  font-size: 14px;
 }
 .cycle-wait-detail {
   display: grid;
@@ -252,11 +252,11 @@
 }
 .functional-timeline-heading strong {
   color: var(--navy);
-  font-size: 17px;
+  font-size: 19px;
 }
 .functional-timeline-heading time {
   color: #46556b;
-  font-size: 13px;
+  font-size: 15px;
   white-space: nowrap;
 }
 .timeline-actor {
@@ -265,7 +265,7 @@
   gap: 6px;
   margin: 7px 0 0;
   color: #46556b;
-  font-size: 14px;
+  font-size: 16px;
   align-items: center;
 }
 .timeline-actor-name {
@@ -319,13 +319,13 @@
   border-radius: 6px;
   background: #f2f5f9;
   color: var(--navy);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
 }
 .timeline-summary {
   margin: 9px 0 0;
   color: hsl(var(--foreground));
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1.7;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -339,13 +339,13 @@
   overflow-wrap: anywhere;
 }
 .details dt {
-  font-size: 11px;
+  font-size: 14px;
   color: hsl(var(--muted));
   margin-bottom: 5px;
 }
 .details dd {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
   white-space: pre-wrap;
 }
 .timeline article {
@@ -408,4 +408,124 @@
     flex-direction: column;
     gap: 4px;
   }
+}
+
+.timeline-actor-color-8 {
+  --actor-color: hsl(20 65% 28%);
+  --actor-background: hsl(20 65% 94%);
+}
+
+.timeline-actor-color-9 {
+  --actor-color: hsl(158 65% 28%);
+  --actor-background: hsl(158 65% 94%);
+}
+
+.timeline-actor-color-10 {
+  --actor-color: hsl(295 65% 28%);
+  --actor-background: hsl(295 65% 94%);
+}
+
+.timeline-actor-color-11 {
+  --actor-color: hsl(73 65% 28%);
+  --actor-background: hsl(73 65% 94%);
+}
+
+.timeline-actor-color-12 {
+  --actor-color: hsl(210 65% 28%);
+  --actor-background: hsl(210 65% 94%);
+}
+
+.timeline-actor-color-13 {
+  --actor-color: hsl(348 65% 28%);
+  --actor-background: hsl(348 65% 94%);
+}
+
+.timeline-actor-color-14 {
+  --actor-color: hsl(125 65% 28%);
+  --actor-background: hsl(125 65% 94%);
+}
+
+.timeline-actor-color-15 {
+  --actor-color: hsl(263 65% 28%);
+  --actor-background: hsl(263 65% 94%);
+}
+
+.timeline-actor-color-16 {
+  --actor-color: hsl(40 65% 28%);
+  --actor-background: hsl(40 65% 94%);
+}
+
+.timeline-actor-color-17 {
+  --actor-color: hsl(178 65% 28%);
+  --actor-background: hsl(178 65% 94%);
+}
+
+.timeline-actor-color-18 {
+  --actor-color: hsl(315 65% 28%);
+  --actor-background: hsl(315 65% 94%);
+}
+
+.timeline-actor-color-19 {
+  --actor-color: hsl(93 65% 28%);
+  --actor-background: hsl(93 65% 94%);
+}
+
+.timeline-actor-color-20 {
+  --actor-color: hsl(230 65% 28%);
+  --actor-background: hsl(230 65% 94%);
+}
+
+.timeline-actor-color-21 {
+  --actor-color: hsl(8 65% 28%);
+  --actor-background: hsl(8 65% 94%);
+}
+
+.timeline-actor-color-22 {
+  --actor-color: hsl(145 65% 28%);
+  --actor-background: hsl(145 65% 94%);
+}
+
+.timeline-actor-color-23 {
+  --actor-color: hsl(283 65% 28%);
+  --actor-background: hsl(283 65% 94%);
+}
+
+.timeline-actor-color-24 {
+  --actor-color: hsl(60 65% 28%);
+  --actor-background: hsl(60 65% 94%);
+}
+
+.timeline-actor-color-25 {
+  --actor-color: hsl(198 65% 28%);
+  --actor-background: hsl(198 65% 94%);
+}
+
+.timeline-actor-color-26 {
+  --actor-color: hsl(335 65% 28%);
+  --actor-background: hsl(335 65% 94%);
+}
+
+.timeline-actor-color-27 {
+  --actor-color: hsl(113 65% 28%);
+  --actor-background: hsl(113 65% 94%);
+}
+
+.timeline-actor-color-28 {
+  --actor-color: hsl(250 65% 28%);
+  --actor-background: hsl(250 65% 94%);
+}
+
+.timeline-actor-color-29 {
+  --actor-color: hsl(28 65% 28%);
+  --actor-background: hsl(28 65% 94%);
+}
+
+.timeline-actor-color-30 {
+  --actor-color: hsl(165 65% 28%);
+  --actor-background: hsl(165 65% 94%);
+}
+
+.timeline-actor-color-31 {
+  --actor-color: hsl(303 65% 28%);
+  --actor-background: hsl(303 65% 94%);
 }
