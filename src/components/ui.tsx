@@ -1,10 +1,7 @@
 import Link from "next/link";
 import { queryLimits } from "@/lib/application-config";
 import { orderStatusNames } from "@/lib/domain";
-import {
-  actionErrorMessages,
-  isActionErrorCode,
-} from "@/lib/action-result";
+import { actionErrorMessages, isActionErrorCode } from "@/lib/action-result";
 export function Heading({
   title,
   description,
@@ -14,7 +11,6 @@ export function Heading({
 }) {
   return (
     <div className="heading">
-      <p className="eyebrow">OS SEMED</p>
       <h1>{title}</h1>
       <p className="muted">{description}</p>
     </div>

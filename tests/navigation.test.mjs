@@ -104,5 +104,5 @@ test("OAuth e raiz compartilham o resolvedor de destino", async () => {
   for (const source of [callback, root])
     assert.match(source, /resolveFirstAuthorizedRoute/);
   assert.doesNotMatch(`${auth}\n${callback}\n${root}`, /redirect\("\/painel"\)/);
-  assert.match(notFound, /href="\/"/);
+  assert.match(notFound, /<BackButton standalone\s*\/>/);
 });

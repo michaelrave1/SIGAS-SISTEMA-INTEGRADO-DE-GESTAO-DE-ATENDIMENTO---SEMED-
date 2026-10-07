@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { BackButton } from "@/components/back-button";
 export default function Setup() {
   return (
     <main className="access-page">
       <section className="access-card">
+        <BackButton fallback="/login" />
         <span className="brand">
           SIGMA <b>SEMED</b>
         </span>

@@ -1,17 +1,25 @@
 import { loginWithGoogle } from "@/app/actions";
+import { BackButton } from "@/components/back-button";
 import { configured } from "@/lib/supabase";
 import Link from "next/link";
 import { allowedGoogleDomains } from "@/lib/professional-identity";
 
 const oauthMessages: Record<string, string> = {
-  "nao-cadastrado": "Seu e-mail institucional ainda não possui cadastro ativo no OS SEMED. Solicite a liberação à administração.",
-  inativo: "Seu cadastro profissional está inativo. Procure a administração do OS SEMED.",
-  dominio: "Esta conta Google não pertence a um domínio institucional autorizado.",
-  "conflito-identidade": "A identidade desta conta não pôde ser vinculada com segurança. Procure a administração.",
+  "nao-cadastrado":
+    "Seu e-mail institucional ainda não possui cadastro ativo no OS SEMED. Solicite a liberação à administração.",
+  inativo:
+    "Seu cadastro profissional está inativo. Procure a administração do OS SEMED.",
+  dominio:
+    "Esta conta Google não pertence a um domínio institucional autorizado.",
+  "conflito-identidade":
+    "A identidade desta conta não pôde ser vinculada com segurança. Procure a administração.",
   "provedor-invalido": "Use uma conta Google Workspace com e-mail confirmado.",
-  "callback-invalido": "Não foi possível concluir a autenticação com o Google. Tente novamente.",
-  indisponivel: "O acesso institucional está temporariamente indisponível. Tente novamente.",
-  configuracao: "O acesso Google Workspace ainda precisa ser configurado neste ambiente.",
+  "callback-invalido":
+    "Não foi possível concluir a autenticação com o Google. Tente novamente.",
+  indisponivel:
+    "O acesso institucional está temporariamente indisponível. Tente novamente.",
+  configuracao:
+    "O acesso Google Workspace ainda precisa ser configurado neste ambiente.",
 };
 export default async function Login({
   searchParams,
@@ -42,6 +50,7 @@ export default async function Login({
       </section>
       <section className="login-form">
         <div>
+          <BackButton />
           <span className="eyebrow">ORDENS DE SERVIÇO</span>
           <h2>Bem-vindo ao OS SEMED</h2>
           <p className="muted">Acesse com sua conta institucional.</p>
@@ -65,7 +74,10 @@ export default async function Login({
                   Entrar com Google Workspace
                 </button>
               </form>
-              <p className="muted">Use sua conta @edu.uberabadigital.com.br ou @uberabadigital.com.br.</p>
+              <p className="muted">
+                Use sua conta @edu.uberabadigital.com.br ou
+                @uberabadigital.com.br.
+              </p>
             </>
           ) : (
             <p className="notice">

@@ -1081,3 +1081,6 @@ tbody tr:hover td { background: #f6f8ff; }
 @media (prefers-reduced-motion: reduce) {
   button, .button, input, select, textarea, .sidebar nav a { transition: none; }
 }
+.back-button { flex-shrink: 0; }
+.login-form .back-button { width: auto; margin-bottom: 24px; }
+.access-card > .back-button { margin-bottom: 20px; }

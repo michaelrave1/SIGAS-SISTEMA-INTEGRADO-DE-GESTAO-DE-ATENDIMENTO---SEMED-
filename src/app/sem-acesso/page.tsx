@@ -1,8 +1,10 @@
 import { logout } from "@/app/actions";
+import { BackButton } from "@/components/back-button";
 export default function NoAccess() {
   return (
     <main className="access-page">
       <section className="access-card">
+        <BackButton fallback="/login" />
         <span className="brand">
           SIGMA <b>SEMED</b>
         </span>

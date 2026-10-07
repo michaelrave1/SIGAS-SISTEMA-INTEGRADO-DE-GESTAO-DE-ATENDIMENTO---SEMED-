@@ -17,12 +17,9 @@ import {
   KeyRound,
 } from "lucide-react";
 import { logout } from "@/app/actions";
+import { BackButton, BackButtonContext } from "@/components/back-button";
 import type { PermissionKey } from "@/lib/authorization-core";
-import {
-  firstAuthorizedRoute,
-  navigationContext,
-  visibleNavigationItems,
-} from "@/lib/navigation";
+import { firstAuthorizedRoute, visibleNavigationItems } from "@/lib/navigation";
 
 const icons = {
   dashboard: LayoutDashboard,
@@ -64,7 +61,6 @@ export function Shell({
     (item) => item.section === "administration",
   );
   const homeHref = firstAuthorizedRoute(new Set(permissions), admin);
-  const context = navigationContext(path);
   const navigationLink = (item: (typeof visible)[number]) => {
     const Icon = icons[item.id];
     return (
@@ -85,89 +81,74 @@ export function Shell({
     );
   };
   return (
-    <div className="app-shell">
-      <a className="skip" href="#conteudo">
-        Pular para conteúdo
-      </a>
-      <aside
-        className={`sidebar ${open ? "expanded" : ""}`}
-        id="menu-principal"
-      >
-        <Link className="brand" href={homeHref}>
-          SIGMA <b>SEMED</b>
-        </Link>
-        <p className="brand-description">
-          Gestão, Monitoramento
-          <br />e Aprendizagem
-        </p>
-        <div className="module-label">
-          OS SEMED <span>ORDENS DE SERVIÇO</span>
-        </div>
-        <nav aria-label="Menu principal">
-          {mainLinks.map(navigationLink)}
-          {catalogLinks.length > 0 && (
-            <>
-              <p className="nav-label">CADASTROS</p>
-              {catalogLinks.map(navigationLink)}
-            </>
-          )}
-          {administrationLinks.length > 0 && (
-            <>
-              <p className="nav-label">ADMINISTRAÇÃO</p>
-              {administrationLinks.map(navigationLink)}
-            </>
-          )}
-        </nav>
-        <div className="sidebar-footer">
-          Secretaria Municipal
-          <br />
-          de Educação
-        </div>
-      </aside>
-      <div className="workspace">
-        <header className="topbar">
-          <div className="row">
-            <button
-              className="mobile-menu secondary"
-              aria-label={open ? "Fechar menu" : "Abrir menu"}
-              aria-expanded={open}
-              aria-controls="menu-principal"
-              onClick={() => setOpen(!open)}
-            >
-              <Menu size={20} />
-            </button>
-            <div>
-              <strong>{context.title}</strong>
-              <small>OS SEMED · Gestão de serviços</small>
-            </div>
+    <BackButtonContext.Provider value={true}>
+      <div className="app-shell">
+        <a className="skip" href="#conteudo">
+          Pular para conteúdo
+        </a>
+        <aside
+          className={`sidebar ${open ? "expanded" : ""}`}
+          id="menu-principal"
+        >
+          <Link className="brand" href={homeHref}>
+            SIGMA <b>SEMED</b>
+          </Link>
+          <p className="brand-description">
+            Gestão, Monitoramento
+            <br />e Aprendizagem
+          </p>
+          <div className="module-label">
+            OS SEMED <span>ORDENS DE SERVIÇO</span>
           </div>
-          <div className="row">
-            <span className="user-name">{name}</span>
-            <form action={logout}>
-              <button className="icon-button" title="Sair" aria-label="Sair">
-                <LogOut size={19} />
-              </button>
-            </form>
-          </div>
-        </header>
-        <main id="conteudo" className="main-content">
-          <nav className="breadcrumb" aria-label="Navegação estrutural">
-            <ol>
-              {context.breadcrumbs.map((item, index) => (
-                <li key={`${item.label}-${index}`}>
-                  {index > 0 && <span aria-hidden="true">/</span>}
-                  {item.href ? (
-                    <Link href={item.href}>{item.label}</Link>
-                  ) : (
-                    item.label
-                  )}
-                </li>
-              ))}
-            </ol>
+          <nav aria-label="Menu principal">
+            {mainLinks.map(navigationLink)}
+            {catalogLinks.length > 0 && (
+              <>
+                <p className="nav-label">CADASTROS</p>
+                {catalogLinks.map(navigationLink)}
+              </>
+            )}
+            {administrationLinks.length > 0 && (
+              <>
+                <p className="nav-label">ADMINISTRAÇÃO</p>
+                {administrationLinks.map(navigationLink)}
+              </>
+            )}
           </nav>
-          {children}
-        </main>
+          <div className="sidebar-footer">
+            Secretaria Municipal
+            <br />
+            de Educação
+          </div>
+        </aside>
+        <div className="workspace">
+          <header className="topbar">
+            <div className="row">
+              <button
+                className="mobile-menu secondary"
+                aria-label={open ? "Fechar menu" : "Abrir menu"}
+                aria-expanded={open}
+                aria-controls="menu-principal"
+                onClick={() => setOpen(!open)}
+              >
+                <Menu size={20} />
+              </button>
+              <BackButton fallback={homeHref} />
+            </div>
+            <div className="row">
+              <span className="user-name">{name}</span>
+              <form action={logout}>
+                <button className="icon-button" title="Sair" aria-label="Sair">
+                  <LogOut size={19} />
+                </button>
+              </form>
+            </div>
+          </header>
+          <main id="conteudo" className="main-content">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </BackButtonContext.Provider>
   );
 }
