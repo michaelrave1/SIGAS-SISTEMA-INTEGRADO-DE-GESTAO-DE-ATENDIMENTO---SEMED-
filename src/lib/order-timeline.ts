@@ -36,7 +36,8 @@ export function orderTimelineEventLabel(
   eventType: string | null,
   fromStatus: string | null,
 ) {
-  if (eventType) return orderTimelineEventLabels[eventType] ?? "Evento da ordem";
+  if (eventType)
+    return orderTimelineEventLabels[eventType] ?? "Evento da ordem";
   return fromStatus ? "Alteração de situação" : "Abertura";
 }
 
@@ -46,4 +47,14 @@ export function orderTimelineTransition(
 ) {
   if (!fromStatus || fromStatus === toStatus) return null;
   return `${fromStatus} → ${toStatus}`;
+}
+
+/** Stable presentation color across events and pagination, independent of role. */
+export function orderTimelineActorColor(actorName: string) {
+  const identity = actorName.trim().normalize("NFC").toLocaleUpperCase("pt-BR");
+  let hash = 0;
+  for (const character of identity) {
+    hash = (Math.imul(hash, 31) + character.codePointAt(0)!) >>> 0;
+  }
+  return `timeline-actor-color-${hash % 8}`;
 }

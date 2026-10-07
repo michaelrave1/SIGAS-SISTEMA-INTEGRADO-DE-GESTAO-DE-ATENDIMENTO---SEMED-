@@ -2,6 +2,7 @@ import { Pagination, date } from "@/components/ui";
 import {
   orderTimelineEventLabel,
   orderTimelineTransition,
+  orderTimelineActorColor,
 } from "@/lib/order-timeline";
 import type { OrderTimelineEvent } from "./types";
 
@@ -17,7 +18,10 @@ export function OrderTimeline({
   total: number;
 }) {
   return (
-    <section className="card functional-timeline" aria-labelledby="timeline-title">
+    <section
+      className="card functional-timeline"
+      aria-labelledby="timeline-title"
+    >
       <div className="section-head">
         <div>
           <p className="eyebrow">LINHA DO TEMPO</p>
@@ -34,7 +38,10 @@ export function OrderTimeline({
             event.to_status,
           );
           return (
-            <li key={event.event_id}>
+            <li
+              key={event.event_id}
+              className={orderTimelineActorColor(event.actor_name)}
+            >
               <span className="functional-timeline-marker" aria-hidden="true" />
               <article>
                 <div className="functional-timeline-heading">
@@ -44,15 +51,25 @@ export function OrderTimeline({
                       event.from_status,
                     )}
                   </strong>
-                  <time dateTime={event.created_at}>{date(event.created_at)}</time>
+                  <time dateTime={event.created_at}>
+                    {date(event.created_at)}
+                  </time>
                 </div>
                 <p className="timeline-actor">
-                  <span>{event.actor_name}</span>
+                  <span className="timeline-actor-name">
+                    {event.actor_name}
+                  </span>
                   {event.actor_role && <span>{event.actor_role}</span>}
-                  {event.actor_unit_name && <span>{event.actor_unit_name}</span>}
+                  {event.actor_unit_name && (
+                    <span>{event.actor_unit_name}</span>
+                  )}
                 </p>
-                {transition && <p className="timeline-transition">{transition}</p>}
-                {event.summary && <p className="timeline-summary">{event.summary}</p>}
+                {transition && (
+                  <p className="timeline-transition">{transition}</p>
+                )}
+                {event.summary && (
+                  <p className="timeline-summary">{event.summary}</p>
+                )}
               </article>
             </li>
           );

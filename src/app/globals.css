@@ -12,6 +12,19 @@ body {
   color: hsl(var(--foreground));
   font-family: "Segoe UI", Arial, sans-serif;
   font-size: 14px;
+  text-transform: uppercase;
+}
+/* Padrão de apresentação: mantém valores e identificadores internos intactos. */
+button,
+input,
+select,
+option,
+optgroup,
+textarea,
+input::placeholder,
+textarea::placeholder,
+input::file-selector-button {
+  text-transform: uppercase;
 }
 ::selection {
   background: var(--lime);
